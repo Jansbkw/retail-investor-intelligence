@@ -1,0 +1,33 @@
+companies:
+  TTWO:
+    name: Take-Two Interactive
+    exchange: Nasdaq
+    aliases: ["Take-Two", "Take Two", "Rockstar Games", "GTA VI", "GTA 6"]
+  VEON:
+    name: VEON Ltd.
+    exchange: Nasdaq
+    aliases: ["VEON", "Beeline", "Kyivstar", "Jazz Pakistan"]
+  STB:
+    name: Secure Trust Bank plc
+    exchange: London Stock Exchange
+    aliases: ["Secure Trust Bank", "Secure Trust", "STB.L", "LON:STB"]
+    ambiguous: true
+
+collection:
+  default_days: 90
+  platforms: [reddit, stocktwits, youtube]
+  max_posts_per_platform: 100
+
+ui:
+  default_days: 30
+  day_options: [7, 30, 90]
+
+ai:
+  prompt_version: v1
+  batch_size: 10
+  max_retries: 3
+  retrieval_k: 8
+  minimum_evidence: 2
+  estimated_cost_per_million_input_tokens: 0.40
+  estimated_cost_per_million_output_tokens: 1.60
+
