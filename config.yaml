@@ -33,12 +33,53 @@ companies:
         symbol: STB
         expected_title: Secure Trust Bank plc
         expected_exchange: LSE
+    security_candidates:
+      - entity_id: GB00B6TKHP66
+        name: Secure Trust Bank plc
+        symbol: STB
+        exchange: London Stock Exchange
+        isin: GB00B6TKHP66
+        status: active
+        aliases: ["Secure Trust Bank", "Secure Trust", "STB.L", "LON:STB"]
+      - entity_id: NO0003053605
+        name: Storebrand ASA
+        symbol: STB
+        exchange: Oslo Børs
+        isin: NO0003053605
+        status: active
+        aliases: ["Storebrand", "Storebrand ASA", "OSE:STB"]
+      - entity_id: TN0002600955
+        name: Société Tunisienne de Banque
+        symbol: STB
+        exchange: Bourse de Tunis
+        isin: TN0002600955
+        status: active
+        aliases: ["Société Tunisienne de Banque", "Societe Tunisienne de Banque", "BVMT:STB"]
+      - entity_id: legacy-student-transportation
+        name: Student Transportation Inc
+        symbol: STB
+        exchange: Former Nasdaq / TSX
+        status: historical
+        aliases: ["Student Transportation", "Student Transportation Inc"]
+      - entity_id: mistag-stba
+        name: S&T Bancorp, Inc.
+        symbol: STBA
+        exchange: Nasdaq
+        status: mis_tagged
+        aliases: ["S&T Bancorp", "STBA"]
+      - entity_id: noncompany-secure-the-bag
+        name: Secure The Bag token/community
+        symbol: STB
+        exchange: Crypto / non-company
+        status: non_company
+        aliases: ["Secure The Bag", "first ledger", "Xaman"]
 
 collection:
   default_days: 30
   platforms: [stocktwits, youtube, x]
   max_posts_per_platform: 100
   stocktwits_export_path: data/live/stocktwits_mcp_2026-11-20.json
+  stocktwits_entity_discovery_path: data/live/stocktwits_stb_entity_discovery_mcp_2026-11-20.json
 
 ui:
   default_days: 30

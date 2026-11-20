@@ -1,0 +1,525 @@
+{
+  "provenance": "stocktwits_mcp",
+  "export_type": "entity_discovery_snapshot",
+  "synthetic": false,
+  "collected_at": "2026-11-20T11:44:39.502Z",
+  "authenticated_connection_verified": true,
+  "query_symbol": "STB",
+  "symbol": {
+    "exchange": "NASDAQ",
+    "has_chart": false,
+    "id": 11126,
+    "industry": "OtherTransportation",
+    "sector": "Transportation",
+    "symbol": "STB",
+    "title": "Student Transportation Inc",
+    "watchlist_count": 292
+  },
+  "cursor": {
+    "max": 122291122,
+    "since": 647694951
+  },
+  "more": true,
+  "messages": [
+    {
+      "id": 647694951,
+      "body": "Global Earnings Watch - March 17 \n \n6 earnings events tomorrow. Here&#39;s what I&#39;m doing👇 \n \n$LULU $A2A $BOL.X $SSAB $STB $TELIA",
+      "created_at": "2026-03-16T23:48:08Z",
+      "likes": null,
+      "replies": 1,
+      "reshares": null,
+      "sentiment": null,
+      "source": "StockTwits Web",
+      "symbols": [
+        "LULU",
+        "BOL.X",
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 610658337,
+      "body": "$XRP.X \n\n$STB xrp first ledger \n\nTelegram group \nhttps://t.me/+OgtUl-IAQEw4MzMx",
+      "created_at": "2025-04-07T01:51:00Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockTwits For Android ",
+      "symbols": [
+        "XRP.X",
+        "STB"
+      ],
+      "link": {
+        "description": "TG Link: https://t.me/+OgtUl-IAQEw4MzMx The home of traders, HODLers, and bag-securing legends. No FUD, no weak hands-just real moves and a strong community.",
+        "image": "https://cdn1.cdn-telegram.org/file/bcHHTvI_p8NNeadBmYGO_eBldd9axikbq8mGENuBuuQqfhxjnlJoEaS72xCHOcD10LvczVFEwCmhGSFz_Ib092KGH7JeqAaoN6ekoAcG1bzArFzYwuxXfA4Kz_uVNO7A0EgqratHzIm8oZk85HjgpHXrz5D901k1z4DI6oHaPCuL_csp8lfw4bo9bq3sFFM1cHuHy3cyuooiVaDsb2U7T9G5dXq2Oexlt2gYEBDr34X5zhCRxV1A5OJ1RxOQ3po8c2LyrthYISadsqwrWQKTy44o7dkuxUzuoN84Gt0dRwMAHmlnWBqykGmNBiz7iH0jsKbM3jrVuQmwQ5wgZEDBjw.jpg",
+        "title": "$STB | Secure The Bag CTO",
+        "url": "https://t.me/+OgtUl-IAQEw4MzMx"
+      }
+    },
+    {
+      "id": 610643624,
+      "body": "$XRP.X \n\n$STB secure the bag !!!!!!",
+      "created_at": "2025-04-06T23:41:51Z",
+      "likes": 1,
+      "replies": null,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockTwits For Android ",
+      "symbols": [
+        "XRP.X",
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 610637026,
+      "body": "$XRP.X \n\n$STB on first ledger.... Also can be brought on xaman app 💪💪",
+      "created_at": "2025-04-06T22:47:19Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockTwits For Android ",
+      "symbols": [
+        "XRP.X",
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 610635767,
+      "body": "$XRP.X everything dropping while $STB has barely been affected 🤷",
+      "created_at": "2025-04-06T22:35:58Z",
+      "likes": 1,
+      "replies": 1,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockTwits For Android ",
+      "symbols": [
+        "XRP.X",
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 610626550,
+      "body": "$XRP.X \n$STB  on first ledger!",
+      "created_at": "2025-04-06T20:39:26Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockTwits For Android ",
+      "symbols": [
+        "XRP.X",
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 610624846,
+      "body": "$XRP.X \n\n$STB on first ledger",
+      "created_at": "2025-04-06T20:09:58Z",
+      "likes": 1,
+      "replies": null,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockTwits For Android ",
+      "symbols": [
+        "XRP.X",
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 610585979,
+      "body": "$XRP.X \n\n$STB (SECURE THE BAG!)",
+      "created_at": "2025-04-05T23:35:27Z",
+      "likes": 1,
+      "replies": null,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockTwits For Android ",
+      "symbols": [
+        "XRP.X",
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 555936297,
+      "body": "$spy $stb  I had no idea there was a ticker for shi _the bed...",
+      "created_at": "2023-12-27T19:21:00Z",
+      "likes": 1,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "StockTwits Web",
+      "symbols": [
+        "SPY",
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 537918892,
+      "body": "S&amp;T Bancorp announces Quarterly dividend of $0.32.  Payable on 8/24/2023. 4.02% Yield. www.marketbeat.com/stocks/NASDAQ/STBA/dividend/ $STB",
+      "created_at": "2023-07-28T13:41:14Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Zapier",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "description": "Is S&T Bancorp (NASDAQ:STBA) a good stock for dividend investors? View the latest STBA dividend yield, history, and payment date at MarketBeat.",
+        "image": "https://www.marketbeat.com/logos/st-bancorp-inc-logo.png?v=20221129150546",
+        "title": "S&T Bancorp Dividend Yield 2023, Date & History (NASDAQ:STBA)",
+        "url": "www.marketbeat.com/stocks/NASDAQ/STBA/dividend/"
+      }
+    },
+    {
+      "id": 525187377,
+      "body": "S&amp;T Bancorp announces Quarterly dividend of $0.32.  Payable on 5/25/2023. 4.72% Yield. www.marketbeat.com/stocks/NASDAQ/STBA/dividend/ $STB",
+      "created_at": "2023-04-28T12:01:36Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Zapier",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "description": "Get Dividend Stock Ideas Daily Enter your email address below to receive the DividendStocks.com newsletter, a concise daily summary of stocks that are about to go ex-dividend as well as new dividend announcements. Skip Charts & View Dividend History STBA Dividend Yield Over Time (Data available from 1/1/2013 forward) What is S&T Bancorp's dividend payout ratio?",
+        "image": "https://www.marketbeat.com/logos/st-bancorp-inc-logo.png?v=20221129150546",
+        "title": "S&T Bancorp Dividend Yield 2023, Date & History (NASDAQ:STBA)",
+        "url": "www.marketbeat.com/stocks/NASDAQ/STBA/dividend/"
+      }
+    },
+    {
+      "id": 508717166,
+      "body": "S&amp;T Bancorp announces Quarterly dividend of $0.32.  Payable on 2/23/2023. 3.77% Yield. www.marketbeat.com/stocks/NASDAQ/STBA/dividend/ $STB",
+      "created_at": "2023-01-27T14:03:50Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Zapier",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "description": "Is S&T Bancorp (NASDAQ:STBA) a good stock for dividend investors? View the latest STBA dividend yield, history, and payment date at MarketBeat.",
+        "image": "https://www.marketbeat.com/logos/st-bancorp-inc-logo.png?v=20221129150546",
+        "title": "STBA Dividend Yield 2023, Date & History (S&T Bancorp)",
+        "url": "www.marketbeat.com/stocks/NASDAQ/STBA/dividend/"
+      }
+    },
+    {
+      "id": 480520551,
+      "body": "$STB  It will likely touch back into the $16s before the move higher",
+      "created_at": "2022-08-23T17:49:01Z",
+      "likes": 1,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "StockTwits for iOS",
+      "symbols": [
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 322140012,
+      "body": "$STB Storebrand ASA to Host Earnings Call \n\nhttps://newsfilter.io/a/d95bcf23baee257ce6c925521763fad7",
+      "created_at": "2021-04-28T11:45:40Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "StockTwits Web",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "description": "NEW YORK, NY / ACCESSWIRE / April 28, 2021 / Storebrand ASA (NASDAQ:STB) will be discussing their earnings results in their 2021 First Quarter Earnings call to be held on April 28, 2021at 10:00 AM Eastern Time.",
+        "title": "Storebrand ASA to Host Earnings Call",
+        "url": "https://newsfilter.io/a/d95bcf23baee257ce6c925521763fad7"
+      }
+    },
+    {
+      "id": 146364360,
+      "body": "$STB has an excellent technical rating and also presents a decent setup pattern. https://www.chartmill.com/analyze.php?utm_source=stocktwits&amp;utm_medium=TA&amp;utm_content=SETUP&amp;utm_campaign=social_tracking#/STB?key=8cdc65b6-dca2-419c-8fd6-1de5cb284b43",
+      "created_at": "2018-11-28T10:09:21Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Chartmill alerts",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "description": "Technical Analysis reports, Fundamental Analysis reports. Visualize and inspect technical and fundamental ratings of stocks on NASDAQ,NYSE,AMEX,TSX,LSE,Euronext",
+        "title": "ChartMill.com | Technical and Fundamental Analysis Report",
+        "url": "https://www.chartmill.com/analyze.php?utm_source=stocktwits&utm_medium=TA&utm_content=SETUP&utm_campaign=social_tracking#/STB?key=8cdc65b6-dca2-419c-8fd6-1de5cb284b43"
+      }
+    },
+    {
+      "id": 145438552,
+      "body": "$STB Today&#39;s trading opportunity: https://app.seasonaledge.com/tools/DB/14800?from=11-16&amp;to=12-2&amp;sl=6&amp;dp=10",
+      "created_at": "2018-11-16T14:59:19Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Seasonal Edge",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "title": "Seasonal Edge",
+        "url": "https://app.seasonaledge.com/tools/DB/14800?from=11-16&to=12-2&sl=6&dp=10"
+      }
+    },
+    {
+      "id": 145246091,
+      "body": "$STB Today&#39;s trading opportunity: https://app.seasonaledge.com/tools/DB/14800?from=11-15&amp;to=12-1&amp;sl=6&amp;dp=10",
+      "created_at": "2018-11-15T11:16:11Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Seasonal Edge",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "title": "Seasonal Edge",
+        "url": "https://app.seasonaledge.com/tools/DB/14800?from=11-15&to=12-1&sl=6&dp=10"
+      }
+    },
+    {
+      "id": 145045337,
+      "body": "$STB Today&#39;s trading opportunity: https://app.seasonaledge.com/tools/DB/14800?from=11-14&amp;to=12-2&amp;sl=2&amp;dp=10",
+      "created_at": "2018-11-14T01:29:36Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Seasonal Edge",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "title": "Seasonal Edge",
+        "url": "https://app.seasonaledge.com/tools/DB/14800?from=11-14&to=12-2&sl=2&dp=10"
+      }
+    },
+    {
+      "id": 144764422,
+      "body": "$STB Today&#39;s trading opportunity: https://app.seasonaledge.com/tools/DB/14800?from=11-12&amp;to=11-22&amp;sl=5.5&amp;dp=10",
+      "created_at": "2018-11-12T01:17:57Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Seasonal Edge",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "title": "Seasonal Edge",
+        "url": "https://app.seasonaledge.com/tools/DB/14800?from=11-12&to=11-22&sl=5.5&dp=10"
+      }
+    },
+    {
+      "id": 140262727,
+      "body": "Our analyzer finds a low risk trade suggestion for $STB, buy stop @7.54, stop @7.47!. https://www.chartmill.com/analyze.php?utm_source=stocktwits&amp;utm_medium=TA&amp;utm_content=TRADINGSETUP&amp;utm_campaign=social_tracking#/STB?key=8cdc65b6-dca2-419c-8fd6-1de5cb284b43",
+      "created_at": "2018-10-05T17:05:55Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Chartmill alerts",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "description": "Technical Analysis reports, inspect technical and setup rating of stocks on NASDAQ,NYSE,AMEX and Euronext",
+        "title": "ChartMill.com | Technical Analysis Report",
+        "url": "https://www.chartmill.com/analyze.php?utm_source=stocktwits&utm_medium=TA&utm_content=TRADINGSETUP&utm_campaign=social_tracking#/STB?key=8cdc65b6-dca2-419c-8fd6-1de5cb284b43"
+      }
+    },
+    {
+      "id": 133629663,
+      "body": "Besides having an excellent technical rating, $STB also presents a decent setup pattern. https://www.chartmill.com/analyze.php?utm_source=stocktwits&amp;utm_medium=TA&amp;utm_content=SETUP&amp;utm_campaign=social_tracking#/STB?key=8cdc65b6-dca2-419c-8fd6-1de5cb284b43",
+      "created_at": "2018-08-13T00:03:03Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Chartmill alerts",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "description": "Technical Analysis reports, inspect technical and setup rating of stocks on NASDAQ,NYSE,AMEX and Euronext",
+        "title": "ChartMill.com | Technical Analysis Report",
+        "url": "https://www.chartmill.com/analyze.php?utm_source=stocktwits&utm_medium=TA&utm_content=SETUP&utm_campaign=social_tracking#/STB?key=8cdc65b6-dca2-419c-8fd6-1de5cb284b43"
+      }
+    },
+    {
+      "id": 129250029,
+      "body": "$STB Today&#39;s trading opportunity: https://app.seasonaledge.com/tools/DB/14800?from=7-5&amp;to=7-22&amp;sl=4.5&amp;dp=10",
+      "created_at": "2018-07-05T17:09:00Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Seasonal Edge",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "title": "Seasonal Edge",
+        "url": "https://app.seasonaledge.com/tools/DB/14800?from=7-5&to=7-22&sl=4.5&dp=10"
+      }
+    },
+    {
+      "id": 129171397,
+      "body": "$STB Today&#39;s trading opportunity: https://app.seasonaledge.com/tools/DB/14800?from=7-4&amp;to=7-22&amp;sl=4.5&amp;dp=10",
+      "created_at": "2018-07-04T16:06:44Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Seasonal Edge",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "title": "Seasonal Edge",
+        "url": "https://app.seasonaledge.com/tools/DB/14800?from=7-4&to=7-22&sl=4.5&dp=10"
+      }
+    },
+    {
+      "id": 125924150,
+      "body": "Boenning Scattergood Raises S&amp;T Bancorp Q4 2018 Earnings Estimates to $0.71 EPS (Previously $0.69). http://www.marketbeat.com/x/496157 $STB",
+      "created_at": "2018-06-06T12:07:31Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Zapier",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "url": "http://www.marketbeat.com/x/496157"
+      }
+    },
+    {
+      "id": 125775431,
+      "body": "Boenning Scattergood Raises S&amp;T Bancorp Q3 2018 Earnings Estimates to $0.73 EPS (Previously $0.71). http://www.marketbeat.com/x/495986 $STB",
+      "created_at": "2018-06-05T10:32:39Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Zapier",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "url": "http://www.marketbeat.com/x/495986"
+      }
+    },
+    {
+      "id": 125522085,
+      "body": "$STB has an excellent technical rating and also presents a decent setup pattern. https://www.chartmill.com/analyze.php?utm_source=stocktwits&amp;utm_medium=TA&amp;utm_content=SETUP&amp;utm_campaign=social_tracking#/STB?key=8cdc65b6-dca2-419c-8fd6-1de5cb284b43",
+      "created_at": "2018-06-01T20:14:00Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": null,
+      "source": "Chartmill alerts",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "description": "Technical Analysis reports, inspect technical and setup rating of stocks on NASDAQ,NYSE,AMEX and Euronext",
+        "image": "https://www.chartmill.com/img/report.png",
+        "title": "ChartMill.com | Technical Analysis Report",
+        "url": "https://www.chartmill.com/analyze.php?utm_source=stocktwits&utm_medium=TA&utm_content=SETUP&utm_campaign=social_tracking#/STB?key=8cdc65b6-dca2-419c-8fd6-1de5cb284b43"
+      }
+    },
+    {
+      "id": 124452484,
+      "body": "$STB why can’t you buy on Robinhood?",
+      "created_at": "2018-05-23T07:18:33Z",
+      "likes": null,
+      "replies": 1,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockTwits for iOS",
+      "symbols": [
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 123460143,
+      "body": "GoldenStar Signal Alert: $STB. More insights: https://stockinvest.us/technical-analysis/STB?utm_source=stocktwits&amp;utm_medium=post",
+      "created_at": "2018-05-15T02:30:09Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockInvest.us",
+      "symbols": [
+        "STB"
+      ],
+      "link": {
+        "description": "Technical stock forecast for Student Transportation Inc: Several short-term signals, along with a general good trend, are positive and we conclude that the current level may hold a buying opportunity as there ...",
+        "image": "https://stockinvest.us/assets/img/general/free.jpg",
+        "title": "Stock Analysis for Student Transportation Inc (STB)",
+        "url": "https://stockinvest.us/technical-analysis/STB?utm_source=stocktwits&utm_medium=post"
+      }
+    },
+    {
+      "id": 122291242,
+      "body": "$GERN a lot of buyouts come on earnings day. See $STB . Glta",
+      "created_at": "2018-05-04T13:17:33Z",
+      "likes": 3,
+      "replies": null,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockTwits for iOS",
+      "symbols": [
+        "GERN",
+        "STB"
+      ],
+      "link": null
+    },
+    {
+      "id": 122291122,
+      "body": "@triniblockchain $STB was just bought out on earning...and I expect $GERN to he bought in similar fashion",
+      "created_at": "2018-05-04T13:16:53Z",
+      "likes": null,
+      "replies": null,
+      "reshares": null,
+      "sentiment": "Bullish",
+      "source": "StockTwits for iOS",
+      "symbols": [
+        "GERN",
+        "STB"
+      ],
+      "link": null
+    }
+  ]
+}

@@ -18,6 +18,18 @@ class SourceIdentity(BaseModel):
     expected_exchange: str
 
 
+class SecurityCandidate(BaseModel):
+    """One exchange-qualified entity that may share a ticker symbol."""
+
+    entity_id: str
+    name: str
+    symbol: str
+    exchange: str
+    isin: str | None = None
+    status: Literal["active", "historical", "mis_tagged", "non_company"] = "active"
+    aliases: list[str] = Field(default_factory=list)
+
+
 class CompanyConfig(BaseModel):
     name: str
     exchange: str
@@ -26,6 +38,7 @@ class CompanyConfig(BaseModel):
     exclusions: list[str] = Field(default_factory=list)
     ambiguous: bool = False
     source_identities: dict[str, SourceIdentity] = Field(default_factory=dict)
+    security_candidates: list[SecurityCandidate] = Field(default_factory=list)
 
 
 class CollectionConfig(BaseModel):
@@ -33,6 +46,7 @@ class CollectionConfig(BaseModel):
     platforms: list[str] = Field(default_factory=lambda: ["stocktwits", "youtube", "x"])
     max_posts_per_platform: int = 100
     stocktwits_export_path: str = "data/live/stocktwits_mcp_2026-11-20.json"
+    stocktwits_entity_discovery_path: str = "data/live/stocktwits_stb_entity_discovery_mcp_2026-11-20.json"
 
 
 class UIConfig(BaseModel):

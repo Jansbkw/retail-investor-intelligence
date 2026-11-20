@@ -83,6 +83,46 @@ if page == "Overview":
     company = next((item for item in api_get("/companies") if item["ticker"] == ticker), None)
     st.title(f"{ticker} · {company['name'] if company else ''}")
     st.caption("Real public-data snapshot · Source text preserved · Synthetic data: none")
+    if company and company.get("candidate_count", 0) > 1:
+        entity_result = api_get("/entities/search", {"ticker": ticker})
+        st.warning(
+            f"{ticker} is not globally unique. Select an exchange-qualified company before "
+            "combining or analysing its discussions. This dashboard is scoped to "
+            f"{company['name']} ({company['exchange']})."
+        )
+        with st.expander(f"View {company['candidate_count']} active {ticker} company candidates", expanded=True):
+            st.dataframe([
+                {
+                    "Company": item["name"], "Exchange": item["exchange"],
+                    "Ticker": item["symbol"], "ISIN": item.get("isin") or "—",
+                }
+                for item in entity_result["active_candidates"]
+            ], hide_index=True, use_container_width=True)
+            source_resolution = entity_result["source_classification"]
+            if source_resolution["raw_count"]:
+                names = {
+                    item["entity_id"]: item["name"]
+                    for item in entity_result["active_candidates"] + entity_result["other_matches"]
+                }
+                breakdown = {
+                    names.get(key, key.replace("_", " ").title()): value
+                    for key, value in source_resolution["counts"].items()
+                }
+                st.caption(
+                    f"Stocktwits ticker stream: {source_resolution['raw_count']} raw message(s), "
+                    "classified by company context rather than ticker alone."
+                )
+                st.dataframe(
+                    [{"Resolved entity": key, "Messages": value} for key, value in breakdown.items()],
+                    hide_index=True, use_container_width=True,
+                )
+            else:
+                st.caption("No preserved Stocktwits messages are currently available for entity classification.")
+            if entity_result["other_matches"]:
+                st.caption(
+                    "Historical, mistagged and non-company matches are retained separately and are "
+                    "never mixed into company analytics."
+                )
     source_badges(overview["coverage"])
     st.markdown(f'<div class="headline">{overview["headline"]}</div>', unsafe_allow_html=True)
 
