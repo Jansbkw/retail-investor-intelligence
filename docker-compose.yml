@@ -1,19 +1,31 @@
 services:
   api:
     build: .
-    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000
-    env_file: .env
+    command: sh -c "python -m app.cli prepare-demo && exec uvicorn app.api.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL_SMALL: ${OPENAI_MODEL_SMALL:-}
+      OPENAI_MODEL_LARGE: ${OPENAI_MODEL_LARGE:-}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+      X_BEARER_TOKEN: ${X_BEARER_TOKEN:-}
+      ALLOW_PAID_X_CALLS: ${ALLOW_PAID_X_CALLS:-false}
     ports:
       - "8000:8000"
     volumes:
       - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
 
   ui:
     build: .
     command: streamlit run app/ui/streamlit_app.py --server.address 0.0.0.0
-    env_file: .env
+    environment:
+      API_BASE_URL: http://api:8000
     ports:
       - "8501:8501"
     depends_on:
-      - api
-
+      api:
+        condition: service_healthy

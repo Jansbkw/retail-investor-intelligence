@@ -1,28 +1,74 @@
-# Design notes
+# Design and trade-offs
 
-## Product principle
+## User and product decision
 
-Summary first, evidence one click away. Every metric shows its sample size. The main
-workflow is designed for an IR lead with roughly ten minutes per week.
+The user is an IR lead with about ten minutes per week. The homepage therefore answers, in order: how much evidence exists, overall mood, top themes, concerns, recency, and where the claims came from. Detailed posts and filters live on a second page. Coverage failures are product state, not log-only errors.
 
-## System boundaries
+The application avoids a single “sentiment score”. Counts and sample sizes make uncertainty visible, while source links let an IR user inspect nuance and rumours.
 
-- Collectors only fetch and normalise source-specific fields.
-- Pipeline code cleans, deduplicates, and filters relevance.
-- AI code produces validated labels and grounded narrative text.
-- Numeric results are always computed in SQL/Python, never by the model.
-- FastAPI presents stable contracts; Streamlit contains no business logic.
+## Boundaries
 
-## MVP trade-offs
+```text
+collectors -> clean/dedupe -> relevance -> persist/FTS
+                                     -> LLM enrichment/cache
+                                     -> deterministic aggregation
+                                     -> FastAPI -> Streamlit
+```
 
-- SQLite and batch ingestion reduce operational complexity for the take-home.
-- Synthetic fixtures make the demo deterministic when APIs or keys are unavailable.
-- STB uses conservative company aliases and financial context to reduce ticker ambiguity.
-- Embeddings can remain in SQLite at this scale; a vector database is a later migration.
+- Adapters translate official source records into one `Post` model. They do not classify.
+- Relevance is a conservative deterministic gate before paid model calls.
+- Enrichment handles semantic labels and summaries only.
+- SQL/Python computes every count, distribution, time series, and sample size.
+- FastAPI owns stable contracts; Streamlit owns presentation only.
+- Ingestion is a batch command and can fail independently of the serving process.
 
-## Planned production path
+## Data integrity
 
-Move scheduled ingestion to a job runner, store secrets in a managed secret store, add
-source-specific rate-limit and freshness monitoring, move to Postgres/vector search, and
-add authentication, audit logs, tracing, prompt/evaluation gates, and retention controls.
+The stable ID is `source:source_post_id:ticker`; this supports the rare case where the same source object legitimately maps to more than one company. A separate content hash supports duplicate suppression and change-aware analysis. Raw source text and cleaned text are both retained. Engagement values are nullable because unavailable is not zero.
 
+Upserts make repeated collection idempotent. Every analysis row stores its input content hash, model, prompt version, creation time, and status. A current row is skipped; the response cache avoids repeated calls across runs. Failed analysis is recorded rather than silently dropped.
+
+The current SQLite schema is deliberately compact. FTS5 is adequate for tens of thousands of posts and makes retrieval inspectable. Postgres plus pgvector or a managed search service is the natural multi-tenant migration.
+
+## Company identity and STB
+
+Ticker matching alone is unsafe. Each company has canonical name, aliases, exclusions, and source-specific identity expectations. For ambiguous STB:
+
+1. Stocktwits `STB` was validated as Student Transportation Inc., not Secure Trust Bank plc.
+2. `STB.L` was not found.
+3. Collection is marked `identity_mismatch`; those messages are never stored under Secure Trust Bank.
+4. Text-source matches require “Secure Trust Bank”, “Secure Trust”, `STB.L`, or `LON:STB`, while set-top box and other named entities are excluded.
+
+This prefers false negatives over contaminating an IR briefing with another company.
+
+## AI reliability and security
+
+Pydantic rejects extra fields, invalid enums, excessive topic counts, invalid confidence, and missing evidence IDs. Prompts delimit social content and explicitly treat it as untrusted. Evidence IDs must equal the input record. Runtime calls use timeouts, bounded exponential backoff, and call telemetry.
+
+RAG uses company-scoped FTS5 retrieval and passes only retrieved evidence. The answer schema includes citations and limitations; post-generation validation rejects invented IDs or URL mismatches. The service refuses investment advice and abstains below two evidence records. Without an LLM API key, it labels an extractive fallback rather than pretending it is AI synthesis.
+
+Public post text is HTML-escaped before UI rendering. Usernames are not stored. Raw MCP exports in the repository replace source user IDs with a one-way hash.
+
+## Source strategy
+
+- **Stocktwits:** MCP only. OAuth is external to the repo. The ingest adapter accepts only an export declaring MCP provenance and validates the symbol title/exchange before normalizing it.
+- **YouTube:** official Data API v3 search plus top-level comments; the comment's own timestamp is used. Disabled comments and quota failures are controlled source states.
+- **X:** official recent-search API only. Both a bearer token and `ALLOW_PAID_X_CALLS=true` are required. No call was made in this run.
+
+The repository contains a real, verbatim Stocktwits snapshot so reviewers can reproduce the demo without inheriting one developer's OAuth session. It is intentionally described as a stream sample, not complete 30-day coverage.
+
+## Deployment
+
+Docker Compose is the smallest reproducible deployment: the API prepares SQLite, imports checked enrichment, exposes a health check, and then the UI starts. In production:
+
+- run collection/enrichment as scheduled workers with queues and dead-letter handling;
+- put immutable source payloads in object storage and relational data in Postgres;
+- authorize Stocktwits separately on the worker, never by copying a Codex thread token;
+- store OpenAI/YouTube/X secrets in a managed secret store;
+- add tenant isolation, RBAC, audit logs, encryption, retention/deletion workflows, and content-policy controls;
+- monitor freshness, rate limits, per-source failure rates, model cost/latency, schema failure rate, relevance drift, and retrieval/citation quality;
+- promote prompt/model changes only after labelled evaluation and a canary run.
+
+## Deliberate omissions
+
+No fake multi-platform data, vector database, streaming infrastructure, authentication UI, or elaborate agent framework was added. The highest-value slice is a truthful pipeline, strict company identity, grounded evidence, and a polished weekly workflow. YouTube/X live execution and broader STB source discovery are the next work once credentials, cost approval, and Terms-of-Service review exist.
