@@ -12,32 +12,42 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 ROOT = Path(__file__).resolve().parents[1]
 
 
+class SourceIdentity(BaseModel):
+    symbol: str
+    expected_title: str
+    expected_exchange: str
+
+
 class CompanyConfig(BaseModel):
     name: str
     exchange: str
     aliases: list[str] = Field(default_factory=list)
+    exclusions: list[str] = Field(default_factory=list)
     ambiguous: bool = False
+    source_identities: dict[str, SourceIdentity] = Field(default_factory=dict)
 
 
 class CollectionConfig(BaseModel):
-    default_days: int = 90
-    platforms: list[str] = Field(default_factory=lambda: ["reddit", "stocktwits", "youtube"])
+    default_days: int = 30
+    platforms: list[str] = Field(default_factory=lambda: ["stocktwits", "youtube", "x"])
     max_posts_per_platform: int = 100
+    stocktwits_export_path: str = "data/live/stocktwits_mcp_2026-11-20.json"
 
 
 class UIConfig(BaseModel):
     default_days: int = 30
-    day_options: list[int] = Field(default_factory=lambda: [7, 30, 90])
+    day_options: list[int] = Field(default_factory=lambda: [7, 30])
 
 
 class AIConfig(BaseModel):
-    prompt_version: str = "v1"
+    prompt_version: str = "enrichment-v2"
     batch_size: int = 10
     max_retries: int = 3
+    request_timeout_seconds: float = 30.0
     retrieval_k: int = 8
     minimum_evidence: int = 2
-    estimated_cost_per_million_input_tokens: float = 0.4
-    estimated_cost_per_million_output_tokens: float = 1.6
+    estimated_cost_per_million_input_tokens: float = 0.40
+    estimated_cost_per_million_output_tokens: float = 1.60
 
 
 class FileConfig(BaseModel):
@@ -51,34 +61,33 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=ROOT / ".env", env_file_encoding="utf-8", extra="ignore"
     )
-
     app_env: str = "development"
     database_path: Path = ROOT / "data" / "retail_intelligence.db"
     config_path: Path = ROOT / "config.yaml"
-    data_mode: Literal["synthetic", "live"] = "synthetic"
-
+    data_mode: Literal["live", "fixture"] = "live"
     openai_api_key: str | None = None
     openai_model_small: str | None = None
     openai_model_large: str | None = None
     openai_embedding_model: str | None = None
-
-    reddit_client_id: str | None = None
-    reddit_client_secret: str | None = None
-    reddit_user_agent: str = "retail-investor-intelligence/0.1"
     youtube_api_key: str | None = None
-    stocktwits_base_url: str = "https://api.stocktwits.com/api/2"
+    x_bearer_token: str | None = None
+    allow_paid_x_calls: bool = False
+    cors_origins: str = "http://localhost:8501"
+    api_base_url: str = "http://localhost:8000"
 
     def resolved_database_path(self) -> Path:
-        path = self.database_path
-        return path if path.is_absolute() else ROOT / path
+        return self.database_path if self.database_path.is_absolute() else ROOT / self.database_path
 
     def resolved_config_path(self) -> Path:
-        path = self.config_path
-        return path if path.is_absolute() else ROOT / path
+        return self.config_path if self.config_path.is_absolute() else ROOT / self.config_path
 
     @property
     def llm_enabled(self) -> bool:
         return bool(self.openai_api_key and self.openai_model_small)
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [item.strip() for item in self.cors_origins.split(",") if item.strip()]
 
 
 @lru_cache(maxsize=1)
@@ -98,4 +107,3 @@ def load_file_config(path: str | None = None) -> FileConfig:
 def reset_config_cache() -> None:
     get_settings.cache_clear()
     load_file_config.cache_clear()
-

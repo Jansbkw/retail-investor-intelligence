@@ -1,31 +1,51 @@
 companies:
   TTWO:
-    name: Take-Two Interactive
+    name: Take-Two Interactive Software, Inc.
     exchange: Nasdaq
-    aliases: ["Take-Two", "Take Two", "Rockstar Games", "GTA VI", "GTA 6"]
+    aliases: ["Take-Two", "Take Two", "Rockstar Games", "Rockstar", "GTA VI", "GTA 6", "Grand Theft Auto"]
+    exclusions: []
+    source_identities:
+      stocktwits:
+        symbol: TTWO
+        expected_title: Take-Two Interactive Software, Inc.
+        expected_exchange: NASDAQ
   VEON:
     name: VEON Ltd.
     exchange: Nasdaq
-    aliases: ["VEON", "Beeline", "Kyivstar", "Jazz Pakistan"]
+    aliases: ["VEON", "Beeline", "Kyivstar", "Jazz Pakistan", "Mobilink"]
+    exclusions: []
+    source_identities:
+      stocktwits:
+        symbol: VEON
+        expected_title: VEON Ltd
+        expected_exchange: NASDAQ
   STB:
     name: Secure Trust Bank plc
     exchange: London Stock Exchange
     aliases: ["Secure Trust Bank", "Secure Trust", "STB.L", "LON:STB"]
+    exclusions: ["Student Transportation", "Société Tunisienne de Banque", "Societe Tunisienne de Banque", "set-top box", "set top box"]
     ambiguous: true
+    source_identities:
+      stocktwits:
+        symbol: STB
+        expected_title: Secure Trust Bank plc
+        expected_exchange: LSE
 
 collection:
-  default_days: 90
-  platforms: [reddit, stocktwits, youtube]
+  default_days: 30
+  platforms: [stocktwits, youtube, x]
   max_posts_per_platform: 100
+  stocktwits_export_path: data/live/stocktwits_mcp_2026-11-20.json
 
 ui:
   default_days: 30
-  day_options: [7, 30, 90]
+  day_options: [7, 30]
 
 ai:
-  prompt_version: v1
+  prompt_version: enrichment-v2
   batch_size: 10
   max_retries: 3
+  request_timeout_seconds: 30
   retrieval_k: 8
   minimum_evidence: 2
   estimated_cost_per_million_input_tokens: 0.40
