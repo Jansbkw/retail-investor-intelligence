@@ -70,7 +70,7 @@ def evidence_card(item: dict, *, show_engagement: bool = False) -> None:
 st.sidebar.markdown("### Investor Intelligence")
 page = st.sidebar.radio("View", ["Overview", "Discussions"], label_visibility="collapsed")
 ticker = st.sidebar.selectbox("Company", ["TTWO", "VEON", "STB"])
-days = st.sidebar.selectbox("Analysis window", [7, 30], index=1, format_func=lambda value: f"Last {value} days")
+days = st.sidebar.selectbox("Analysis window", [7, 30, 90], index=1, format_func=lambda value: f"Last {value} days")
 
 try:
     overview = api_get("/analytics/overview", {"ticker": ticker, "days": days})

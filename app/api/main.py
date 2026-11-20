@@ -74,26 +74,26 @@ def coverage(ticker: str | None = None) -> list[dict[str, object]]:
 
 @app.get("/analytics/overview")
 def analytics_overview(
-    ticker: str, days: Annotated[int, Query(ge=1, le=30)] = 30,
+    ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30,
     source: list[str] | None = Query(default=None),
 ) -> dict[str, object]:
     return overview(_ticker(ticker), days=days, sources=source)
 
 
 @app.get("/analytics/sentiment")
-def analytics_sentiment(ticker: str, days: Annotated[int, Query(ge=1, le=30)] = 30) -> dict[str, object]:
+def analytics_sentiment(ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30) -> dict[str, object]:
     result = overview(_ticker(ticker), days=days)
     return {"ticker": result["ticker"], "sample_size": result["analysed_count"], "sentiment": result["sentiment"]}
 
 
 @app.get("/analytics/topics")
-def analytics_topics(ticker: str, days: Annotated[int, Query(ge=1, le=30)] = 30) -> dict[str, object]:
+def analytics_topics(ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30) -> dict[str, object]:
     result = overview(_ticker(ticker), days=days)
     return {"ticker": result["ticker"], "sample_size": result["analysed_count"], "topics": result["topics"], "concerns": result["concerns"]}
 
 
 @app.get("/analytics/trends")
-def analytics_trends(ticker: str, days: Annotated[int, Query(ge=1, le=30)] = 30) -> dict[str, object]:
+def analytics_trends(ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30) -> dict[str, object]:
     result = overview(_ticker(ticker), days=days)
     return {
         "ticker": result["ticker"], "sample_size": result["sample_size"],
@@ -104,7 +104,7 @@ def analytics_trends(ticker: str, days: Annotated[int, Query(ge=1, le=30)] = 30)
 
 @app.get("/discussions")
 def get_discussions(
-    ticker: str, days: Annotated[int, Query(ge=1, le=30)] = 30,
+    ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30,
     source: str | None = None, sentiment: str | None = None,
     topic: str | None = None, search: str | None = None,
 ) -> list[dict[str, object]]:

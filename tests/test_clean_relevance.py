@@ -45,3 +45,10 @@ def test_validated_source_symbol_is_relevant() -> None:
     company = load_file_config().companies["TTWO"]
     result = apply_relevance(make_post("$TTWO GTA VI launch demand is strong"), company)
     assert result.relevance_status == RelevanceStatus.RELEVANT
+
+
+def test_ambiguous_ticker_accepts_verified_source_context() -> None:
+    company = load_file_config().companies["STB"]
+    post = make_post("The lending growth and valuation look strong", ticker="STB")
+    result = apply_relevance(post, company)
+    assert result.relevance_status == RelevanceStatus.RELEVANT

@@ -39,7 +39,7 @@ def assess_relevance(post: Post, company: CompanyConfig) -> RelevanceDecision:
     substantive = re.sub(ticker_pattern, "", post.text, flags=re.IGNORECASE).strip(" $.,!?:;-_")
     if len(substantive) < 3:
         return RelevanceDecision(RelevanceStatus.REJECTED, "ticker-only or empty discussion")
-    if company.ambiguous and not alias_hits:
+    if company.ambiguous and not alias_hits and not source_validated:
         return RelevanceDecision(
             RelevanceStatus.AMBIGUOUS,
             "ambiguous ticker without the company name or a verified company-specific alias",
@@ -59,4 +59,3 @@ def apply_relevance(post: Post, company: CompanyConfig) -> Post:
     data["relevance_status"] = decision.status
     data["relevance_reason"] = decision.reason
     return Post.model_validate(data)
-

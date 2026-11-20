@@ -39,7 +39,7 @@ collection:
 
 ui:
   default_days: 30
-  day_options: [7, 30]
+  day_options: [7, 30, 90]
 
 ai:
   prompt_version: enrichment-v2
@@ -50,4 +50,3 @@ ai:
   minimum_evidence: 2
   estimated_cost_per_million_input_tokens: 0.40
   estimated_cost_per_million_output_tokens: 1.60
-
