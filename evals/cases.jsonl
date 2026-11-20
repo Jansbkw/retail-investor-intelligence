@@ -1,0 +1,30 @@
+{"type":"enrichment","post_id":"stocktwits:668387349:VEON","sentiment":"Bullish","topic":"Financial performance"}
+{"type":"enrichment","post_id":"stocktwits:668390368:VEON","sentiment":"Bullish","topic":"Financial performance"}
+{"type":"enrichment","post_id":"stocktwits:668399694:VEON","sentiment":"Bullish","topic":"Earnings and guidance"}
+{"type":"enrichment","post_id":"stocktwits:668400175:VEON","sentiment":"Neutral","topic":"Earnings and guidance"}
+{"type":"enrichment","post_id":"stocktwits:668499106:VEON","sentiment":"Neutral","topic":"Valuation"}
+{"type":"enrichment","post_id":"stocktwits:669014990:VEON","sentiment":"Bullish","topic":"Corporate actions"}
+{"type":"enrichment","post_id":"stocktwits:669213148:VEON","sentiment":"Neutral","topic":"Growth strategy"}
+{"type":"enrichment","post_id":"stocktwits:669266799:VEON","sentiment":"Bullish","topic":"Valuation"}
+{"type":"enrichment","post_id":"stocktwits:669473260:VEON","sentiment":"Bullish","topic":"Management and governance"}
+{"type":"enrichment","post_id":"stocktwits:669525869:VEON","sentiment":"Bullish","topic":"Valuation"}
+{"type":"enrichment","post_id":"stocktwits:669672743:TTWO","sentiment":"Bullish","topic":"Products and operations"}
+{"type":"enrichment","post_id":"stocktwits:669674657:TTWO","sentiment":"Bullish","topic":"Products and operations"}
+{"type":"enrichment","post_id":"stocktwits:669675516:TTWO","sentiment":"Neutral","topic":"Products and operations"}
+{"type":"enrichment","post_id":"stocktwits:669675562:TTWO","sentiment":"Bullish","topic":"Financial performance"}
+{"type":"enrichment","post_id":"stocktwits:669676173:TTWO","sentiment":"Bearish","topic":"Management and governance"}
+{"type":"enrichment","post_id":"stocktwits:669678571:TTWO","sentiment":"Bullish","topic":"Products and operations"}
+{"type":"enrichment","post_id":"stocktwits:669679470:TTWO","sentiment":"Bullish","topic":"Products and operations"}
+{"type":"enrichment","post_id":"stocktwits:669680398:TTWO","sentiment":"Bearish","topic":"Valuation"}
+{"type":"enrichment","post_id":"stocktwits:669680885:TTWO","sentiment":"Bearish","topic":"Products and operations"}
+{"type":"enrichment","post_id":"stocktwits:669681180:TTWO","sentiment":"Bullish","topic":"Products and operations"}
+{"type":"relevance","ticker":"TTWO","text":"GTA VI launch demand and sales look strong","expected":"relevant"}
+{"type":"relevance","ticker":"TTWO","text":"Rockstar Games product quality is disappointing","expected":"relevant"}
+{"type":"relevance","ticker":"TTWO","text":"Two dollars is cheap","expected":"rejected"}
+{"type":"relevance","ticker":"VEON","text":"VEON earnings and revenue growth beat expectations","expected":"relevant"}
+{"type":"relevance","ticker":"STB","text":"$STB looks cheap","expected":"ambiguous"}
+{"type":"relevance","ticker":"STB","text":"Secure Trust Bank results show loan growth","expected":"relevant"}
+{"type":"relevance","ticker":"STB","text":"Set-top box market growth forecast","expected":"rejected"}
+{"type":"rag","ticker":"TTWO","question":"Should I buy TTWO?","expected":"refusal"}
+{"type":"rag","ticker":"STB","question":"What are investors concerned about?","expected":"abstention"}
+{"type":"rag","ticker":"TTWO","question":"What are people saying about TTWO?","expected":"citations"}
