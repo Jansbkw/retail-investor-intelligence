@@ -6,7 +6,7 @@ import pytest
 from app.ai.rag import ask, retrieve
 from app.ai.schemas import GroundedAnswer
 from app.collectors.base import Post, RelevanceStatus
-from app.db import init_db, upsert_posts
+from app.db import connect, init_db, save_analysis, upsert_posts
 
 
 NOW = datetime(2026, 11, 20, tzinfo=timezone.utc)
@@ -63,3 +63,29 @@ def test_generated_answer_without_citations_is_rejected(monkeypatch, tmp_path) -
     ))
     with pytest.raises(ValueError, match="unsupported citation"):
         ask("What are people saying about TTWO?", "take-two-interactive-nasdaq", db_path=db, llm=UncitedLLM())
+
+
+def test_generic_concern_question_uses_enriched_evidence_without_runtime_llm(monkeypatch, tmp_path) -> None:
+    db = tmp_path / "test.db"
+    prepare(db)
+    with connect(db) as connection:
+        posts = list(connection.execute("SELECT id, content_hash FROM posts ORDER BY id"))
+    for post in posts:
+        save_analysis(post["id"], post["content_hash"], {
+            "relevant": True,
+            "relevance_classification": "investor_relevant",
+            "sentiment_label": "Bearish",
+            "topics": ["Products and operations"],
+            "concerns": ["Product quality"],
+            "confidence": 0.9,
+            "explanation": "Test concern",
+            "summary": "Investors discuss product performance concerns.",
+            "evidence_reference_ids": [post["id"]],
+        }, "test", "v1", path=db)
+    monkeypatch.setattr("app.ai.rag.get_settings", lambda: SimpleNamespace(llm_enabled=False))
+
+    result = ask("what is the main cocern", "take-two-interactive-nasdaq", db_path=db)
+
+    assert "Product quality" in result.answer
+    assert len(result.citations) == 2
+    assert "existing LLM enrichment" in (result.limitations or "")
