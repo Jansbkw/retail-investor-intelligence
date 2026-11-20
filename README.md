@@ -41,9 +41,13 @@ Snapshot collected on **2026-11-20 UTC**. Dates below are source post timestamps
 |---|---|---:|---:|---|---|
 | TTWO | Stocktwits MCP | available | 11 / 10 | 2026-11-19 23:55–2026-11-20 01:43 UTC | One ticker-only post rejected; stream snapshot is not a historical firehose |
 | VEON | Stocktwits MCP | available | 10 / 10 | 2026-11-06 07:17–2026-11-18 21:21 UTC | Verbatim, curated live stream snapshot; not a historical firehose |
-| STB | Stocktwits MCP | identity mismatch | 0 / 0 | — | `STB` resolves to Student Transportation Inc.; `STB.L` was not found |
-| All | YouTube | unavailable | 0 / 0 | — | `YOUTUBE_API_KEY` was not available |
-| All | X | not called | 0 / 0 | — | No bearer token and no approval to incur paid API usage |
+| STB | Stocktwits MCP | identity mismatch | 30 discovery records / 0 target-company records | mixed historical stream | The stream mixes several `STB` entities; none verify as Secure Trust Bank |
+| TTWO | YouTube comments | available | 24 retrieved in the targeted run | last 90 days | Parent-video identity is verified before comments enter AI relevance review |
+| VEON | YouTube comments | sparse | 1 retrieved in the targeted run | last 90 days | Genuine data; low volume is preserved as a coverage signal |
+| STB | YouTube comments | no verified data | 0 / 0 | — | Ambiguous videos were excluded rather than assigned to the wrong company |
+| TTWO | Hacker News | experimental | 100 verified company mentions / 1 deterministic investor-relevant | last 30 days | 99 general company/product mentions await AI review |
+| VEON / STB | Hacker News | no verified data | 0 / 0 | last 30 days | Public API worked; identity validation removed fuzzy-search noise |
+| All | X | connector disabled | 0 / 0 | — | Official API returned payment-required; no scraping fallback is used |
 
 Stocktwits identity was authenticated with `whoami`, then every symbol was checked with `get_symbol` before `get_symbol_messages`. The checked-in export has `provenance=stocktwits_mcp` and `synthetic=false`. It stores exact public text and only hashed author identifiers. **No synthetic posts appear in the demo or its metrics.**
 
@@ -63,6 +67,7 @@ Relevant variables:
 
 - `OPENAI_API_KEY`, `OPENAI_MODEL_SMALL`, `OPENAI_MODEL_LARGE`: live enrichment and generative RAG.
 - `YOUTUBE_API_KEY`: official YouTube Data API v3 collection.
+- `FINNHUB_API_KEY`: optional security-candidate discovery. Finnhub is reference data, not a social source.
 - `X_BEARER_TOKEN`: official X Recent Search.
 - `ALLOW_PAID_X_CALLS=true`: an additional cost guard; do not enable without approval.
 - `DATABASE_PATH`, `API_BASE_URL`, `CORS_ORIGINS`: deployment settings.
@@ -72,7 +77,9 @@ Missing credentials produce an explicit coverage record and do not crash the run
 ## Architecture
 
 ```text
-MCP/API adapters
+Finnhub + verified exchange/ISIN registry
+  -> exchange-qualified entity candidates
+MCP/API adapters (Stocktwits, YouTube, Hacker News)
   -> normalize + clean + content/source-ID dedupe
   -> deterministic company relevance / STB ambiguity gate
   -> SQLite posts + FTS5 index
@@ -113,6 +120,7 @@ For free-text questions, FTS5 retrieval is ticker-scoped. The system validates c
 
 - `GET /health`
 - `GET /companies`
+- `GET /entities/search?ticker=STB`
 - `GET /coverage?ticker=TTWO`
 - `GET /analytics/overview?ticker=TTWO&days=30`
 - `GET /analytics/sentiment`, `/topics`, `/trends`
@@ -130,7 +138,7 @@ python evals/run_evals.py
 
 Current verification:
 
-- 14 unit/integration tests pass: cleaning, dedupe, STB relevance, MCP provenance, source failure isolation, idempotency, enrichment cache, deterministic mood direction, FTS retrieval, citation validation/fallback, advice refusal, and API contracts.
+- 33 unit/integration tests pass, including HN pagination/provenance/relevance boundaries and Finnhub candidate filtering, plus cleaning, dedupe, STB relevance, MCP provenance, source failure isolation, idempotency, enrichment cache, deterministic aggregation, retrieval, citation safety, and API contracts.
 - 30/30 regression cases pass: 20 enrichment labels, 7 relevance cases, and 3 RAG safety/grounding behaviors.
 - Local API smoke test: all main endpoints returned 200 in roughly 0.6–2.6 ms on this laptop.
 - The Streamlit UI was browser-tested end to end, including overview, evidence links, discussions, abstention, and no-key fallback.
@@ -139,9 +147,10 @@ The enrichment cases are reviewed regression expectations, not an independently 
 
 ## Known limitations
 
-- Only Stocktwits has live data in this run. YouTube and X adapters are implemented but unexercised without credentials/permission.
+- Hacker News is deliberately labelled experimental: the API returns many TTWO product mentions but very little investor-relevant discussion, and no verified VEON/STB discussion in the tested window.
+- Finnhub improves ticker discovery but has incomplete global-exchange coverage; exchange and ISIN evidence remain authoritative.
 - The Stocktwits MCP returned a current symbol stream, not full 30-day history; volume trends are therefore illustrative and explicitly sample-sized.
-- STB has no valid Stocktwits identity. UK forums are a plausible source but require a Terms-of-Service review and are intentionally out of scope.
+- STB has no valid target-company Stocktwits identity. The raw stream is classified into exchange-qualified, historical, mistagged, non-company and unresolved entities instead of being mixed into Secure Trust Bank analytics.
 - Engagement fields are sparse and nullable. Missing is never treated as zero.
 - SQLite + batch jobs fit this take-home scale, not high-throughput multi-tenant production.
 - Runtime generative Q&A needs an OpenAI API key; the demo's build-time LLM enrichment remains fully inspectable without one.

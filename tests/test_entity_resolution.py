@@ -9,7 +9,10 @@ def stb_candidates():
     return load_file_config().companies["STB"].security_candidates
 
 
-def test_stb_search_returns_all_active_exchange_qualified_candidates() -> None:
+def test_stb_search_returns_all_active_exchange_qualified_candidates(monkeypatch) -> None:
+    from app.api import main
+
+    monkeypatch.setattr(main.settings, "finnhub_api_key", None)
     response = TestClient(app).get("/entities/search", params={"ticker": "STB"})
     assert response.status_code == 200
     payload = response.json()

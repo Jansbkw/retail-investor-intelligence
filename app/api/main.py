@@ -15,6 +15,7 @@ from app.config import ROOT, get_settings, load_file_config
 from app.db import connect, init_db, list_coverage
 from app.pipeline.aggregate import discussions, overview
 from app.pipeline.entity_resolution import classify_messages
+from app.reference_data.finnhub import FinnhubUnavailable, search_symbols
 
 
 class AskRequest(BaseModel):
@@ -109,12 +110,25 @@ def entity_search(ticker: str) -> dict[str, object]:
             source["source_identity"] = discovery.get("symbol")
             source["snapshot_collected_at"] = discovery.get("collected_at")
 
+    reference_lookup: dict[str, object] = {
+        "provider": "finnhub", "status": "not_configured", "candidates": [],
+        "limitation": "Provider candidates require exchange/ISIN verification",
+    }
+    if settings.finnhub_api_key:
+        try:
+            reference_lookup["candidates"] = search_symbols(selected, settings=settings)
+            reference_lookup["status"] = "success"
+        except FinnhubUnavailable as exc:
+            reference_lookup["status"] = "unavailable"
+            reference_lookup["error"] = str(exc)
+
     return {
         "ticker": selected,
         "target": {"name": company.name, "exchange": company.exchange},
         "requires_selection": len(active) > 1,
         "active_candidates": active,
         "other_matches": other,
+        "reference_lookup": reference_lookup,
         "source_classification": source,
     }
 

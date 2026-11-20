@@ -98,6 +98,23 @@ if page == "Overview":
                 }
                 for item in entity_result["active_candidates"]
             ], hide_index=True, use_container_width=True)
+            reference_lookup = entity_result.get("reference_lookup") or {}
+            if reference_lookup.get("status") == "success" and reference_lookup.get("candidates"):
+                st.markdown("**Finnhub discovery candidates**")
+                st.dataframe([
+                    {
+                        "Provider symbol": item["display_symbol"],
+                        "Description": item["description"],
+                        "Status": "Needs exchange/ISIN verification",
+                    }
+                    for item in reference_lookup["candidates"]
+                ], hide_index=True, use_container_width=True)
+                st.caption(
+                    "Finnhub helps discover possible securities; the verified exchange/ISIN registry "
+                    "above remains the identity source of truth."
+                )
+            elif reference_lookup.get("status") == "unavailable":
+                st.caption("Finnhub entity discovery is temporarily unavailable; verified local identities remain usable.")
             source_resolution = entity_result["source_classification"]
             if source_resolution["raw_count"]:
                 names = {
@@ -196,7 +213,7 @@ else:
     st.title(f"{ticker} discussions")
     st.caption("Inspect the public evidence behind the overview classifications.")
     c1, c2, c3 = st.columns(3)
-    source = c1.selectbox("Source", ["All", "stocktwits", "youtube", "x"])
+    source = c1.selectbox("Source", ["All", "stocktwits", "youtube", "hackernews", "x"])
     sentiment = c2.selectbox("Sentiment", ["All", "Bullish", "Bearish", "Neutral", "Unclear / Not investment-related"])
     search = c3.text_input("Search")
     params = {"ticker": ticker, "days": days}

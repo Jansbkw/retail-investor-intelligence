@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from app.collectors import StockTwitsCollector, XCollector, YouTubeCollector
+from app.collectors import HackerNewsCollector, StockTwitsCollector, XCollector, YouTubeCollector
 from app.collectors.base import Collector, CollectorError, IdentityMismatchError, Post
 from app.config import load_file_config
 from app.db import init_db, save_coverage, upsert_posts
@@ -21,6 +21,7 @@ def default_collectors(stocktwits_export: str | Path | None = None) -> dict[str,
     return {
         "stocktwits": StockTwitsCollector(stocktwits_export),
         "youtube": YouTubeCollector(),
+        "hackernews": HackerNewsCollector(),
         "x": XCollector(),
     }
 
@@ -67,7 +68,9 @@ def ingest(
                 report["duplicates_removed"] = duplicates
                 accepted: list[Post] = [apply_relevance(post, company) for post in normalised]
                 report["relevant_count"] = sum(p.relevance_status.value == "relevant" for p in accepted)
-                report["rejected_count"] = len(accepted) - report["relevant_count"]
+                report["rejected_count"] = sum(
+                    p.relevance_status.value in {"rejected", "ambiguous"} for p in accepted
+                )
                 report["new_records"] = upsert_posts(accepted, db_path)
                 timestamps = [p.created_at for p in accepted]
                 if timestamps:
@@ -80,6 +83,10 @@ def ingest(
                     report["limitations"] = "Search and top-level comments only; quota bounded"
                 elif source == "x":
                     report["restrictions"] = "Recent Search access and billing depend on the X project tier"
+                elif source == "hackernews":
+                    report["limitations"] = (
+                        "Public Algolia stories/comments; experimental source with low investor relevance"
+                    )
             except CollectorError as exc:
                 report["error"] = str(exc)
                 report["status"] = "identity_mismatch" if isinstance(exc, IdentityMismatchError) else "unavailable"

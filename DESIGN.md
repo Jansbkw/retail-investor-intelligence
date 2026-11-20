@@ -15,7 +15,7 @@ collectors -> clean/dedupe -> relevance -> persist/FTS
                                      -> FastAPI -> Streamlit
 ```
 
-- Adapters translate official source records into one `Post` model. They do not classify.
+- Adapters translate official source records into one `Post` model and may attach source-specific identity evidence; the pipeline owns the persisted relevance state.
 - Relevance is a conservative deterministic gate before paid model calls.
 - Enrichment handles semantic labels and summaries only.
 - SQL/Python computes every count, distribution, time series, and sample size.
@@ -34,10 +34,10 @@ The current SQLite schema is deliberately compact. FTS5 is adequate for tens of 
 
 Ticker matching alone is unsafe. Each company has canonical name, aliases, exclusions, and source-specific identity expectations. For ambiguous STB:
 
-1. Stocktwits `STB` was validated as Student Transportation Inc., not Secure Trust Bank plc.
-2. `STB.L` was not found.
-3. Collection is marked `identity_mismatch`; those messages are never stored under Secure Trust Bank.
-4. Text-source matches require “Secure Trust Bank”, “Secure Trust”, `STB.L`, or `LON:STB`, while set-top box and other named entities are excluded.
+1. The symbol first resolves to exchange-qualified candidates. The verified registry currently includes Secure Trust Bank (LSE), Storebrand (Oslo), and Société Tunisienne de Banque (Tunis).
+2. Finnhub contributes discovery candidates such as `STB.L` and `STB.OL`, but provider candidates remain unverified until exchange/ISIN evidence agrees.
+3. Stocktwits `STB` resolves to the historical Student Transportation identity and its raw stream mixes multiple entities, so those records are classified separately and never stored under Secure Trust Bank.
+4. Text-source matches require “Secure Trust Bank”, `STB.L`, `LON:STB`, or equivalent verified context; bare `STB`, set-top boxes, historical issuers, mistags and crypto communities do not enter target-company analytics.
 
 This prefers false negatives over contaminating an IR briefing with another company.
 
@@ -53,7 +53,9 @@ Public post text is HTML-escaped before UI rendering. Usernames are not stored. 
 
 - **Stocktwits:** MCP only. OAuth is external to the repo. The ingest adapter accepts only an export declaring MCP provenance and validates the symbol title/exchange before normalizing it.
 - **YouTube:** official Data API v3 search plus top-level comments; the comment's own timestamp is used. Disabled comments and quota failures are controlled source states.
-- **X:** official recent-search API only. Both a bearer token and `ALLOW_PAID_X_CALLS=true` are required. No call was made in this run.
+- **Hacker News:** public Algolia stories/comments with pagination, retry and local entity validation. It is explicitly experimental because the tested window produced many TTWO product mentions but only one strong deterministic investor signal, and no verified VEON/STB records.
+- **Finnhub:** optional reference-data lookup for ticker candidates. It is not counted as a social platform and is never the sole identity authority.
+- **X:** official recent-search API only. The connector remains behind `ALLOW_PAID_X_CALLS`; the tested project returned payment-required, so it is not a current demo source.
 
 The repository contains a real, verbatim Stocktwits snapshot so reviewers can reproduce the demo without inheriting one developer's OAuth session. It is intentionally described as a stream sample, not complete 30-day coverage.
 
@@ -64,11 +66,11 @@ Docker Compose is the smallest reproducible deployment: the API prepares SQLite,
 - run collection/enrichment as scheduled workers with queues and dead-letter handling;
 - put immutable source payloads in object storage and relational data in Postgres;
 - authorize Stocktwits separately on the worker, never by copying a Codex thread token;
-- store OpenAI/YouTube/X secrets in a managed secret store;
+- store OpenAI/YouTube/X/Finnhub secrets in a managed secret store;
 - add tenant isolation, RBAC, audit logs, encryption, retention/deletion workflows, and content-policy controls;
 - monitor freshness, rate limits, per-source failure rates, model cost/latency, schema failure rate, relevance drift, and retrieval/citation quality;
 - promote prompt/model changes only after labelled evaluation and a canary run.
 
 ## Deliberate omissions
 
-No fake multi-platform data, vector database, streaming infrastructure, authentication UI, or elaborate agent framework was added. The highest-value slice is a truthful pipeline, strict company identity, grounded evidence, and a polished weekly workflow. YouTube/X live execution and broader STB source discovery are the next work once credentials, cost approval, and Terms-of-Service review exist.
+No fake multi-platform data, vector database, streaming infrastructure, authentication UI, or elaborate agent framework was added. The current free, reproducible source set is Stocktwits, YouTube comments, and experimental Hacker News. Reddit approval and paid X access are production source-expansion work, not blockers hidden by scraping or synthetic records.

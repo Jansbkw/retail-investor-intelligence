@@ -4,6 +4,7 @@ companies:
     exchange: Nasdaq
     aliases: ["Take-Two", "Take Two", "Rockstar Games", "Rockstar", "GTA VI", "GTA 6", "Grand Theft Auto"]
     youtube_queries: ["Take-Two stock", "Take-Two earnings", "TTWO stock", "GTA VI sales", "GTA VI Take-Two investors", "Rockstar Games revenue"]
+    hackernews_queries: ["TTWO", "Take-Two Interactive", "Take Two Interactive", "Rockstar Games", "GTA VI", "GTA 6", "Grand Theft Auto"]
     exclusions: []
     source_identities:
       stocktwits:
@@ -15,6 +16,7 @@ companies:
     exchange: Nasdaq
     aliases: ["VEON", "Beeline", "Kyivstar", "Jazz Pakistan", "Mobilink"]
     youtube_queries: ["VEON stock", "VEON earnings", "VEON investor", "VEON capital markets day", "Kyivstar VEON investors"]
+    hackernews_queries: ["VEON", "VEON Ltd", "Kyivstar", "Jazz Pakistan", "Beeline"]
     exclusions: []
     source_identities:
       stocktwits:
@@ -26,6 +28,7 @@ companies:
     exchange: London Stock Exchange
     aliases: ["Secure Trust Bank", "Secure Trust", "STB.L", "LON:STB"]
     youtube_queries: ["Secure Trust Bank", "Secure Trust Bank results", "Secure Trust Bank shares", "Secure Trust Bank investors", "Secure Trust Bank annual results"]
+    hackernews_queries: ["Secure Trust Bank", "STB.L", "LON:STB"]
     exclusions: ["Student Transportation", "Société Tunisienne de Banque", "Societe Tunisienne de Banque", "set-top box", "set top box"]
     ambiguous: true
     source_identities:
@@ -76,8 +79,9 @@ companies:
 
 collection:
   default_days: 30
-  platforms: [stocktwits, youtube, x]
+  platforms: [stocktwits, youtube, hackernews]
   max_posts_per_platform: 100
+  hackernews_max_pages_per_query: 5
   stocktwits_export_path: data/live/stocktwits_mcp_2026-11-20.json
   stocktwits_entity_discovery_path: data/live/stocktwits_stb_entity_discovery_mcp_2026-11-20.json
 

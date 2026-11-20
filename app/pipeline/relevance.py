@@ -39,6 +39,16 @@ def assess_relevance(post: Post, company: CompanyConfig) -> RelevanceDecision:
     substantive = re.sub(ticker_pattern, "", post.text, flags=re.IGNORECASE).strip(" $.,!?:;-_")
     if len(substantive) < 3 or sum(character.isalnum() for character in substantive) < 3:
         return RelevanceDecision(RelevanceStatus.REJECTED, "ticker-only or empty discussion")
+    if post.source == "hackernews" and source_validated:
+        if post.raw_metadata.get("investor_related") is True:
+            return RelevanceDecision(
+                RelevanceStatus.RELEVANT,
+                "verified Hacker News company mention with local investor/financial context",
+            )
+        return RelevanceDecision(
+            RelevanceStatus.PENDING,
+            "verified company mention; requires AI investor-relevance review",
+        )
     if company.ambiguous and not alias_hits and not source_validated:
         return RelevanceDecision(
             RelevanceStatus.AMBIGUOUS,

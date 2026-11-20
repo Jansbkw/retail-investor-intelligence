@@ -35,6 +35,7 @@ class CompanyConfig(BaseModel):
     exchange: str
     aliases: list[str] = Field(default_factory=list)
     youtube_queries: list[str] = Field(default_factory=list)
+    hackernews_queries: list[str] = Field(default_factory=list)
     exclusions: list[str] = Field(default_factory=list)
     ambiguous: bool = False
     source_identities: dict[str, SourceIdentity] = Field(default_factory=dict)
@@ -43,8 +44,9 @@ class CompanyConfig(BaseModel):
 
 class CollectionConfig(BaseModel):
     default_days: int = 30
-    platforms: list[str] = Field(default_factory=lambda: ["stocktwits", "youtube", "x"])
+    platforms: list[str] = Field(default_factory=lambda: ["stocktwits", "youtube", "hackernews"])
     max_posts_per_platform: int = 100
+    hackernews_max_pages_per_query: int = 5
     stocktwits_export_path: str = "data/live/stocktwits_mcp_2026-11-20.json"
     stocktwits_entity_discovery_path: str = "data/live/stocktwits_stb_entity_discovery_mcp_2026-11-20.json"
 
@@ -86,6 +88,7 @@ class Settings(BaseSettings):
     openai_embedding_model: str | None = None
     youtube_api_key: str | None = None
     x_bearer_token: str | None = None
+    finnhub_api_key: str | None = None
     allow_paid_x_calls: bool = False
     cors_origins: str = "http://localhost:8501"
     api_base_url: str = "http://localhost:8000"

@@ -18,7 +18,8 @@ def parser() -> argparse.ArgumentParser:
 
     collect = commands.add_parser("ingest", help="Collect, normalise, filter, and persist records")
     collect.add_argument("--ticker", action="append", choices=list(load_file_config().companies))
-    collect.add_argument("--source", action="append", choices=load_file_config().collection.platforms)
+    source_choices = sorted(set(load_file_config().collection.platforms) | {"x"})
+    collect.add_argument("--source", action="append", choices=source_choices)
     collect.add_argument("--days", type=int, default=30)
     collect.add_argument("--stocktwits-export")
 
@@ -60,4 +61,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
