@@ -11,7 +11,13 @@ from pydantic import BaseModel, Field
 
 from app.ai.rag import ask
 from app.collectors.stocktwits import StockTwitsCollector
-from app.config import ROOT, get_settings, load_file_config
+from app.config import (
+    ROOT,
+    company_identity,
+    company_registry,
+    get_settings,
+    load_file_config,
+)
 from app.db import connect, init_db, list_coverage
 from app.pipeline.aggregate import discussions, overview
 from app.pipeline.entity_resolution import classify_messages
@@ -19,7 +25,7 @@ from app.reference_data.finnhub import FinnhubUnavailable, search_symbols
 
 
 class AskRequest(BaseModel):
-    ticker: str
+    company_id: str
     question: str = Field(min_length=3, max_length=500)
 
 
@@ -54,6 +60,28 @@ def _ticker(value: str) -> str:
     return ticker
 
 
+def _company(value: str):
+    identity = company_identity(value)
+    if identity is None:
+        raise HTTPException(status_code=404, detail=f"Unknown company: {value}")
+    return identity
+
+
+def _company_payload(identity) -> dict[str, object]:
+    init_db()
+    with connect() as connection:
+        count = connection.execute(
+            "SELECT COUNT(*) FROM posts WHERE company_id=? AND relevance_status='relevant'",
+            (identity.company_id,),
+        ).fetchone()[0]
+    return {
+        **identity.model_dump(),
+        "verified": True,
+        "verified_discussions": count,
+        "coverage_status": "available" if count else "limited",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, object]:
     init_db()
@@ -64,12 +92,33 @@ def health() -> dict[str, object]:
 
 @app.get("/companies")
 def companies() -> list[dict[str, object]]:
-    return [
-        {"ticker": ticker, "name": company.name, "exchange": company.exchange,
-         "ambiguous": company.ambiguous,
-         "candidate_count": len([item for item in company.security_candidates if item.status == "active"])}
-        for ticker, company in load_file_config().companies.items()
-    ]
+    return [_company_payload(identity) for identity in company_registry().values()]
+
+
+@app.get("/companies/search")
+def search_companies(q: str = "") -> list[dict[str, object]]:
+    query = q.strip().casefold()
+    identities = list(company_registry().values())
+    if query:
+        identities = [
+            item for item in identities
+            if query in item.ticker.casefold()
+            or query in item.name.casefold()
+            or query in item.exchange.casefold()
+            or query in item.country.casefold()
+        ]
+    else:
+        identities = [item for item in identities if item.analytics_enabled]
+    identities.sort(key=lambda item: (
+        0 if query and item.ticker.casefold() == query else 1,
+        0 if item.analytics_enabled else 1,
+    ))
+    return [_company_payload(identity) for identity in identities]
+
+
+@app.get("/companies/{company_id}")
+def get_company(company_id: str) -> dict[str, object]:
+    return _company_payload(_company(company_id))
 
 
 @app.get("/entities/search")
@@ -134,36 +183,36 @@ def entity_search(ticker: str) -> dict[str, object]:
 
 
 @app.get("/coverage")
-def coverage(ticker: str | None = None) -> list[dict[str, object]]:
-    selected = _ticker(ticker) if ticker else None
-    return [dict(row) for row in list_coverage() if not selected or row["ticker"] == selected]
+def coverage(company_id: str | None = None) -> list[dict[str, object]]:
+    selected = _company(company_id).company_id if company_id else None
+    return [dict(row) for row in list_coverage() if not selected or row["company_id"] == selected]
 
 
 @app.get("/analytics/overview")
 def analytics_overview(
-    ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30,
+    company_id: str, days: Annotated[int, Query(ge=1, le=90)] = 30,
     source: list[str] | None = Query(default=None),
 ) -> dict[str, object]:
-    return overview(_ticker(ticker), days=days, sources=source)
+    return overview(_company(company_id).company_id, days=days, sources=source)
 
 
 @app.get("/analytics/sentiment")
-def analytics_sentiment(ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30) -> dict[str, object]:
-    result = overview(_ticker(ticker), days=days)
-    return {"ticker": result["ticker"], "sample_size": result["analysed_count"], "sentiment": result["sentiment"]}
+def analytics_sentiment(company_id: str, days: Annotated[int, Query(ge=1, le=90)] = 30) -> dict[str, object]:
+    result = overview(_company(company_id).company_id, days=days)
+    return {"company_id": result["company_id"], "ticker": result["ticker"], "sample_size": result["analysed_count"], "sentiment": result["sentiment"]}
 
 
 @app.get("/analytics/topics")
-def analytics_topics(ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30) -> dict[str, object]:
-    result = overview(_ticker(ticker), days=days)
-    return {"ticker": result["ticker"], "sample_size": result["analysed_count"], "topics": result["topics"], "concerns": result["concerns"]}
+def analytics_topics(company_id: str, days: Annotated[int, Query(ge=1, le=90)] = 30) -> dict[str, object]:
+    result = overview(_company(company_id).company_id, days=days)
+    return {"company_id": result["company_id"], "ticker": result["ticker"], "sample_size": result["analysed_count"], "topics": result["topics"], "concerns": result["concerns"]}
 
 
 @app.get("/analytics/trends")
-def analytics_trends(ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30) -> dict[str, object]:
-    result = overview(_ticker(ticker), days=days)
+def analytics_trends(company_id: str, days: Annotated[int, Query(ge=1, le=90)] = 30) -> dict[str, object]:
+    result = overview(_company(company_id).company_id, days=days)
     return {
-        "ticker": result["ticker"], "sample_size": result["sample_size"],
+        "company_id": result["company_id"], "ticker": result["ticker"], "sample_size": result["sample_size"],
         "volume": result["volume"], "sentiment_trend": result["sentiment_trend"],
         "mood_direction": result["mood_direction"],
     }
@@ -171,16 +220,16 @@ def analytics_trends(ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30)
 
 @app.get("/discussions")
 def get_discussions(
-    ticker: str, days: Annotated[int, Query(ge=1, le=90)] = 30,
+    company_id: str, days: Annotated[int, Query(ge=1, le=90)] = 30,
     source: str | None = None, sentiment: str | None = None,
     topic: str | None = None, search: str | None = None,
 ) -> list[dict[str, object]]:
-    return discussions(_ticker(ticker), days=days, source=source, sentiment=sentiment, topic=topic, search=search)
+    return discussions(_company(company_id).company_id, days=days, source=source, sentiment=sentiment, topic=topic, search=search)
 
 
 @app.post("/ask")
 def ask_question(request: AskRequest) -> dict[str, object]:
     try:
-        return ask(request.question, _ticker(request.ticker)).model_dump()
+        return ask(request.question, _company(request.company_id).company_id).model_dump()
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

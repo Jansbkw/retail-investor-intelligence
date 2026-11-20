@@ -7,8 +7,6 @@ from pathlib import Path
 import httpx
 import streamlit as st
 
-# Streamlit executes this file as a script, so the repository root is not always
-# present on sys.path (notably in fresh virtual environments and containers).
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -16,213 +14,294 @@ if str(ROOT) not in sys.path:
 from app.config import get_settings
 
 
-st.set_page_config(page_title="Investor Intelligence", page_icon="◉", layout="wide")
-st.markdown("""
+st.set_page_config(page_title="Curation · Investor Intelligence", page_icon="◉", layout="wide")
+st.markdown(
+    """
 <style>
-  .block-container {max-width: 1180px; padding-top: 2rem;}
-  [data-testid="stMetric"] {background:#f7f8fa; border:1px solid #e7e9ee; padding:16px; border-radius:12px;}
-  .eyebrow {font-size:.75rem; letter-spacing:.12em; text-transform:uppercase; color:#667085; font-weight:700;}
-  .headline {font-size:1.65rem; line-height:1.25; font-weight:650; margin:.25rem 0 1.2rem; color:#17202a;}
-  .evidence {border:1px solid #e7e9ee; border-radius:12px; padding:16px; margin:8px 0; background:white;}
-  .meta {font-size:.8rem; color:#667085; margin-bottom:7px;}
-  @media (max-width: 600px) {.headline {font-size:1.25rem;} .block-container {padding:1rem;}}
+  :root {--ink:#132a2a; --muted:#657474; --paper:#f5f5ef; --card:#fff;
+         --line:#dde3dd; --green:#165c4c; --mint:#dff1e9;}
+  .stApp {background:var(--paper); color:var(--ink);}
+  .block-container {max-width:1160px; padding:2rem 2rem 4rem;}
+  #MainMenu, footer, header [data-testid="stHeaderActionElements"] {visibility:hidden;}
+  h1, h2, h3 {color:var(--ink); letter-spacing:-.025em;}
+  h1 {font-size:2.45rem !important; line-height:1.08 !important;}
+  .brand {font-size:.78rem; font-weight:800; letter-spacing:.16em; color:var(--green);
+          text-transform:uppercase; margin-bottom:3.8rem;}
+  .hero {max-width:760px; margin:0 auto 2.2rem; text-align:center;}
+  .hero h1 {font-size:3.25rem !important; margin:.35rem 0 .8rem;}
+  .hero p {font-size:1.08rem; color:var(--muted); line-height:1.65;}
+  .eyebrow {font-size:.75rem; letter-spacing:.14em; text-transform:uppercase;
+            color:var(--green); font-weight:800;}
+  .identity-line {color:var(--muted); font-size:.95rem; margin-top:-.6rem;}
+  .ticker-pill {display:inline-block; border-radius:999px; padding:.28rem .68rem;
+                background:var(--mint); color:var(--green); font-weight:800;
+                font-size:.82rem; letter-spacing:.05em; vertical-align:middle;}
+  .verified {display:inline-block; color:var(--green); font-weight:700; font-size:.82rem;}
+  [data-testid="stTextInputRootElement"] {background:white; border-radius:14px;}
+  [data-testid="stVerticalBlockBorderWrapper"] {background:var(--card) !important;
+    border:1px solid var(--line) !important; border-radius:16px !important;
+    box-shadow:0 7px 24px rgba(19,42,42,.035);}
+  [data-testid="stMetric"] {background:white; border:1px solid var(--line);
+    padding:1rem 1.1rem; border-radius:14px; min-height:128px;}
+  [data-testid="stMetricLabel"] {color:var(--muted);}
+  .result-name {font-size:1.08rem; font-weight:750; color:var(--ink); margin-bottom:.3rem;}
+  .result-meta, .section-note {font-size:.88rem; color:var(--muted);}
+  .headline {font-size:1.5rem; line-height:1.35; font-weight:680; margin:.1rem 0 1.4rem;}
+  .coverage-box {border-radius:18px; padding:2rem; background:linear-gradient(135deg,#fff8e9,#fff);
+                 border:1px solid #ead9b5; margin:1.2rem 0 2rem;}
+  .coverage-box h2 {margin:.35rem 0 .5rem; font-size:1.55rem;}
+  .coverage-box p {color:#6e624d; max-width:760px; line-height:1.6;}
+  .evidence {border:1px solid var(--line); border-radius:14px; padding:1rem 1.1rem;
+             margin:.65rem 0; background:white; line-height:1.55;}
+  .meta {font-size:.78rem; color:var(--muted); margin-bottom:.5rem; text-transform:capitalize;}
+  .stButton > button {border-radius:10px; font-weight:700;}
+  .stButton > button[kind="primary"] {background:var(--green); border-color:var(--green);}
+  [data-baseweb="tab-list"] {gap:1.2rem; border-bottom:1px solid var(--line);}
+  [data-baseweb="tab"] {padding-left:0; padding-right:0;}
+  @media (max-width:700px) {
+    .block-container {padding:1.2rem 1rem 3rem;} .brand {margin-bottom:2.3rem;}
+    .hero h1 {font-size:2.25rem !important;} h1 {font-size:2rem !important;}
+  }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 API = get_settings().api_base_url.rstrip("/")
 
 
-@st.cache_data(ttl=30, show_spinner=False)
+@st.cache_data(ttl=20, show_spinner=False)
 def api_get(path: str, params: dict | None = None):
     response = httpx.get(f"{API}{path}", params=params, timeout=10)
     response.raise_for_status()
     return response.json()
 
 
-def source_badges(coverage: list[dict]) -> None:
-    labels = []
-    for item in coverage:
-        icon = "●" if item["status"] == "success" else "○"
-        labels.append(f"{icon} {item['source'].title()}: {item['status'].replace('_', ' ')}")
-    st.caption("   ·   ".join(labels) if labels else "No collection run recorded")
-    issues = [item for item in coverage if item.get("error") or item.get("limitations") or item.get("restrictions")]
-    if issues:
-        with st.expander("Coverage details"):
-            for item in issues:
-                detail = item.get("error") or item.get("limitations") or item.get("restrictions")
-                st.markdown(f"**{item['source'].title()} — {item['status'].replace('_', ' ')}:** {detail}")
+def api_available() -> bool:
+    try:
+        api_get("/health")
+        return True
+    except Exception:
+        return False
 
 
 def evidence_card(item: dict, *, show_engagement: bool = False) -> None:
     sentiment = item.get("sentiment") or item.get("sentiment_label") or "Not analysed"
-    metadata = f"{item['source'].title()} · {item['created_at'][:16].replace('T', ' ')} UTC · {sentiment}"
+    metadata = f"{item['source']} · {item['created_at'][:16].replace('T', ' ')} UTC · {sentiment}"
     if show_engagement:
         engagement = "unknown" if item.get("engagement") is None else str(item["engagement"])
         metadata += f" · engagement {engagement}"
     st.markdown(
         f'<div class="evidence"><div class="meta">{html.escape(metadata)}</div>'
         f'{html.escape(item["text"])}<br><a href="{html.escape(item["source_url"], quote=True)}" '
-        f'target="_blank">Open original evidence ↗</a></div>',
+        'target="_blank">View original evidence ↗</a></div>',
         unsafe_allow_html=True,
     )
 
 
-st.sidebar.markdown("### Investor Intelligence")
-page = st.sidebar.radio("View", ["Overview", "Discussions"], label_visibility="collapsed")
-ticker = st.sidebar.selectbox("Company", ["TTWO", "VEON", "STB"])
-days = st.sidebar.selectbox("Analysis window", [7, 30, 90], index=1, format_func=lambda value: f"Last {value} days")
+def company_picker() -> None:
+    st.markdown('<div class="brand">◉ Curation · Investor Intelligence</div>', unsafe_allow_html=True)
+    st.markdown(
+        """<div class="hero"><div class="eyebrow">Retail investor intelligence</div>
+        <h1>Find a listed company</h1>
+        <p>Search by ticker or company name. We verify the exchange-qualified company before
+        showing any discussion, so identical tickers are never mixed.</p></div>""",
+        unsafe_allow_html=True,
+    )
+    query = st.text_input(
+        "Search by ticker or company name", key="company_search",
+        placeholder="Try STB, TTWO or VEON", label_visibility="collapsed",
+    )
+    try:
+        results = api_get("/companies/search", {"q": query})
+    except Exception:
+        st.error("The intelligence service is not running yet. Please refresh in a moment.")
+        return
 
-try:
-    overview = api_get("/analytics/overview", {"ticker": ticker, "days": days})
-except Exception:
-    st.error("The analytics API is unavailable. Start it with `uvicorn app.api.main:app --reload` and refresh.")
-    st.stop()
+    label = f"{len(results)} verified result{'s' if len(results) != 1 else ''}" if query else "Available companies"
+    st.markdown(f"<p class='section-note'>{html.escape(label)}</p>", unsafe_allow_html=True)
+    if not results:
+        st.info("No verified company matches that search. Try a ticker or full company name.")
+        return
 
-if page == "Overview":
-    st.markdown('<div class="eyebrow">Retail investor pulse</div>', unsafe_allow_html=True)
-    company = next((item for item in api_get("/companies") if item["ticker"] == ticker), None)
-    st.title(f"{ticker} · {company['name'] if company else ''}")
-    st.caption("Real public-data snapshot · Source text preserved · Synthetic data: none")
-    if company and company.get("candidate_count", 0) > 1:
-        entity_result = api_get("/entities/search", {"ticker": ticker})
-        st.warning(
-            f"{ticker} is not globally unique. Select an exchange-qualified company before "
-            "combining or analysing its discussions. This dashboard is scoped to "
-            f"{company['name']} ({company['exchange']})."
+    for company in results:
+        with st.container(border=True):
+            info, action = st.columns([5, 1.25], vertical_alignment="center")
+            with info:
+                isin = f' · ISIN {html.escape(company["isin"])}' if company.get("isin") else ""
+                st.markdown(
+                    f'<div class="result-name">{html.escape(company["name"])} '
+                    f'<span class="ticker-pill">{html.escape(company["ticker"])}</span></div>'
+                    f'<div class="result-meta">{html.escape(company["exchange"])} · '
+                    f'{html.escape(company["country"])}{isin}</div>',
+                    unsafe_allow_html=True,
+                )
+            with action:
+                if st.button("View company", key=f"select_{company['company_id']}", width="stretch"):
+                    st.session_state.selected_company_id = company["company_id"]
+                    st.rerun()
+
+    if query.strip().upper() == "STB":
+        st.caption(
+            "STB is used by multiple listed companies. Choose the exchange-qualified company you mean; "
+            "their records and analysis remain completely separate."
         )
-        with st.expander(f"View {company['candidate_count']} active {ticker} company candidates", expanded=True):
-            st.dataframe([
-                {
-                    "Company": item["name"], "Exchange": item["exchange"],
-                    "Ticker": item["symbol"], "ISIN": item.get("isin") or "—",
-                }
-                for item in entity_result["active_candidates"]
-            ], hide_index=True, use_container_width=True)
-            reference_lookup = entity_result.get("reference_lookup") or {}
-            if reference_lookup.get("status") == "success" and reference_lookup.get("candidates"):
-                st.markdown("**Finnhub discovery candidates**")
-                st.dataframe([
-                    {
-                        "Provider symbol": item["display_symbol"],
-                        "Description": item["description"],
-                        "Status": "Needs exchange/ISIN verification",
-                    }
-                    for item in reference_lookup["candidates"]
-                ], hide_index=True, use_container_width=True)
-                st.caption(
-                    "Finnhub helps discover possible securities; the verified exchange/ISIN registry "
-                    "above remains the identity source of truth."
-                )
-            elif reference_lookup.get("status") == "unavailable":
-                st.caption("Finnhub entity discovery is temporarily unavailable; verified local identities remain usable.")
-            source_resolution = entity_result["source_classification"]
-            if source_resolution["raw_count"]:
-                names = {
-                    item["entity_id"]: item["name"]
-                    for item in entity_result["active_candidates"] + entity_result["other_matches"]
-                }
-                breakdown = {
-                    names.get(key, key.replace("_", " ").title()): value
-                    for key, value in source_resolution["counts"].items()
-                }
-                st.caption(
-                    f"Stocktwits ticker stream: {source_resolution['raw_count']} raw message(s), "
-                    "classified by company context rather than ticker alone."
-                )
-                st.dataframe(
-                    [{"Resolved entity": key, "Messages": value} for key, value in breakdown.items()],
-                    hide_index=True, use_container_width=True,
-                )
-            else:
-                st.caption("No preserved Stocktwits messages are currently available for entity classification.")
-            if entity_result["other_matches"]:
-                st.caption(
-                    "Historical, mistagged and non-company matches are retained separately and are "
-                    "never mixed into company analytics."
-                )
-    source_badges(overview["coverage"])
-    st.markdown(f'<div class="headline">{overview["headline"]}</div>', unsafe_allow_html=True)
 
-    a, b, c, d = st.columns(4)
-    a.metric("Relevant discussions", overview["sample_size"], help=f"Public posts retained after relevance filtering; {overview['analysed_count']} AI-analysed.")
-    if overview.get("pending_candidate_count"):
-        a.caption(f"{overview['pending_candidate_count']} additional comments await AI relevance review.")
-    leading = max(overview["sentiment"], key=overview["sentiment"].get) if overview["sentiment"] else "Not analysed"
-    b.metric("Leading sentiment", leading)
-    b.caption(f"Direction: {overview['mood_direction']}")
-    c.metric("Top theme", overview["topics"][0]["name"] if overview["topics"] else "Not analysed")
-    c.caption(f"n={overview['topics'][0]['count']}" if overview["topics"] else "")
-    d.metric("Latest evidence", (overview["freshness"] or "No data")[:10])
 
-    left, right = st.columns([1.1, 1])
+def coverage_summary(items: list[dict]) -> None:
+    if not items:
+        st.caption("No collection run has been recorded for this company.")
+        return
+    labels = []
+    for item in items:
+        icon = "●" if item["status"] == "success" else "○"
+        labels.append(f"{icon} {item['source'].title()} · {item['status'].replace('_', ' ')}")
+    st.caption("    ".join(labels))
+
+
+def limited_coverage(company: dict, overview: dict) -> None:
+    st.markdown(
+        """<div class="coverage-box"><div class="eyebrow">Limited coverage</div>
+        <h2>Company identity verified</h2>
+        <p>No matching investor discussions were retrieved from the connected sources for this
+        company and time window. This does not mean investors are not discussing it elsewhere.</p></div>""",
+        unsafe_allow_html=True,
+    )
+    left, right = st.columns([1, 1.5])
     with left:
-        st.subheader("Sentiment")
-        if overview["sentiment"]:
-            st.bar_chart(overview["sentiment"], horizontal=True)
-            st.caption(f"Based on {overview['analysed_count']} AI-analysed relevant records.")
-        elif overview["sample_size"]:
-            st.info("Relevant records exist, but AI enrichment has not been run.")
-        else:
-            st.info("No relevant records are available from the current sources and time window.")
+        st.metric("Verified discussions", 0)
     with right:
-        st.subheader("What deserves attention")
-        if overview["concerns"]:
-            for concern in overview["concerns"][:5]:
-                st.markdown(f"**{concern['name']}**  ·  {concern['count']} supporting record(s)")
-        elif overview["sample_size"]:
-            st.info("No supported investor concerns have been classified yet.")
+        st.markdown("#### Why this matters")
+        if company["ticker"] == "STB":
+            st.write(
+                "Ticker symbols are not globally unique. The system excluded records belonging to "
+                "other STB companies instead of producing misleading intelligence."
+            )
         else:
-            st.info("No relevant evidence is available for this company and period.")
+            st.write("The current public sources returned no evidence that passed company and investor-relevance checks.")
+    st.markdown("#### Source coverage")
+    coverage_summary(overview["coverage"])
+    st.caption("Coverage gaps are shown explicitly; the product never fills them with synthetic posts.")
 
-    st.subheader("Discussion themes")
-    if overview["topics"]:
-        st.bar_chart({item["name"]: item["count"] for item in overview["topics"]}, horizontal=True)
-    else:
-        st.caption("No topic analysis available.")
 
-    st.subheader("Discussion volume")
-    if overview["volume"]:
-        st.line_chart(overview["volume"], x="date", y="count")
-    else:
-        st.info("No relevant discussion was found in the available sources.")
+def dashboard(company_id: str) -> None:
+    try:
+        company = api_get(f"/companies/{company_id}")
+    except Exception:
+        st.session_state.pop("selected_company_id", None)
+        st.rerun()
 
-    st.subheader("Evidence")
-    for item in overview["evidence"][:5]:
-        evidence_card(item, show_engagement=True)
+    top_left, top_right = st.columns([5, 1])
+    with top_left:
+        st.markdown('<div class="brand" style="margin-bottom:1.4rem">◉ Curation · Investor Intelligence</div>', unsafe_allow_html=True)
+    with top_right:
+        if st.button("← Change company", width="stretch"):
+            st.session_state.pop("selected_company_id", None)
+            st.rerun()
 
-    st.subheader("Ask about investor discussions")
-    question = st.text_input("Question", placeholder=f"What are investors most concerned about for {ticker}?", label_visibility="collapsed")
-    if st.button("Ask", type="primary", disabled=not question):
-        with st.spinner("Reviewing the collected evidence…"):
-            try:
-                response = httpx.post(f"{API}/ask", json={"ticker": ticker, "question": question}, timeout=45)
-                response.raise_for_status()
-                answer = response.json()
-                st.write(answer["answer"])
-                for finding in answer.get("supporting_findings", []):
-                    st.markdown(f"- {finding}")
-                for citation in answer.get("citations", []):
-                    st.markdown(f"[{citation['post_id']}]({citation['url']})")
-                if answer.get("limitations"):
-                    st.caption(answer["limitations"])
-            except Exception:
-                st.error("The question could not be answered right now. No unsupported answer was generated.")
-    st.caption(overview["caveat"])
+    st.markdown('<div class="eyebrow">Company intelligence</div>', unsafe_allow_html=True)
+    st.title(company["name"])
+    identity = f"{company['exchange']}: {company['ticker']} · {company['country']}"
+    if company.get("isin"):
+        identity += f" · ISIN {company['isin']}"
+    st.markdown(
+        f'<div class="identity-line">{html.escape(identity)} &nbsp; '
+        '<span class="verified">✓ Identity verified</span></div>', unsafe_allow_html=True,
+    )
 
+    _, control = st.columns([4, 1])
+    with control:
+        days = st.selectbox("Time window", [7, 30, 90], index=1, format_func=lambda value: f"Last {value} days")
+    try:
+        overview = api_get("/analytics/overview", {"company_id": company_id, "days": days})
+    except Exception:
+        st.error("The analytics service is temporarily unavailable. Please refresh in a moment.")
+        return
+
+    if overview["coverage_status"] == "limited":
+        limited_coverage(company, overview)
+        return
+
+    overview_tab, evidence_tab = st.tabs(["Overview", "Evidence"])
+    with overview_tab:
+        coverage_summary(overview["coverage"])
+        st.markdown(f'<div class="headline">{html.escape(overview["headline"])}</div>', unsafe_allow_html=True)
+        a, b, c, d = st.columns(4)
+        a.metric("Relevant discussions", overview["sample_size"])
+        leading = max(overview["sentiment"], key=overview["sentiment"].get) if overview["sentiment"] else "Not analysed"
+        b.metric("Leading sentiment", leading)
+        c.metric("Top theme", overview["topics"][0]["name"] if overview["topics"] else "Not analysed")
+        d.metric("Latest evidence", (overview["freshness"] or "No data")[:10])
+
+        left, right = st.columns([1.05, 1])
+        with left:
+            st.subheader("Investor mood")
+            if overview["sentiment"]:
+                st.bar_chart(overview["sentiment"], horizontal=True)
+                st.caption(f"Based on {overview['analysed_count']} AI-analysed records · trend {overview['mood_direction']}.")
+            else:
+                st.info("Relevant evidence exists, but AI enrichment has not run yet.")
+        with right:
+            st.subheader("What deserves attention")
+            if overview["concerns"]:
+                for concern in overview["concerns"][:5]:
+                    st.markdown(f"**{concern['name']}**  ·  {concern['count']} supporting record(s)")
+            else:
+                st.info("No supported investor concerns have been classified yet.")
+
+        st.subheader("Discussion themes")
+        if overview["topics"]:
+            st.bar_chart({item["name"]: item["count"] for item in overview["topics"]}, horizontal=True)
+        else:
+            st.caption("No topic analysis is available yet.")
+
+        st.subheader("Ask the evidence")
+        st.caption("Answers use only the selected company’s retrieved posts and include citations.")
+        question = st.text_input(
+            "Question", placeholder=f"What are investors most concerned about for {company['ticker']}?",
+            label_visibility="collapsed",
+        )
+        if st.button("Ask question", type="primary", disabled=not question):
+            with st.spinner("Reviewing the evidence…"):
+                try:
+                    response = httpx.post(
+                        f"{API}/ask", json={"company_id": company_id, "question": question}, timeout=45,
+                    )
+                    response.raise_for_status()
+                    answer = response.json()
+                    st.write(answer["answer"])
+                    for finding in answer.get("supporting_findings", []):
+                        st.markdown(f"- {finding}")
+                    for citation in answer.get("citations", []):
+                        st.markdown(f"[{citation['post_id']}]({citation['url']})")
+                    if answer.get("limitations"):
+                        st.caption(answer["limitations"])
+                except Exception:
+                    st.error("The question could not be answered. No unsupported answer was generated.")
+        st.caption(overview["caveat"])
+
+    with evidence_tab:
+        st.subheader("Source evidence")
+        st.caption("Inspect the public posts behind the classifications and summaries.")
+        c1, c2, c3 = st.columns(3)
+        source = c1.selectbox("Source", ["All", "stocktwits", "youtube", "hackernews", "x"])
+        sentiment = c2.selectbox("Sentiment", ["All", "Bullish", "Bearish", "Neutral", "Unclear / Not investment-related"])
+        search = c3.text_input("Search evidence")
+        params = {"company_id": company_id, "days": days}
+        if source != "All": params["source"] = source
+        if sentiment != "All": params["sentiment"] = sentiment
+        if search: params["search"] = search
+        records = api_get("/discussions", params)
+        st.caption(f"{len(records)} matching record(s)")
+        if not records:
+            st.info("No evidence matches these filters.")
+        for item in records:
+            evidence_card(item)
+
+
+if not api_available():
+    st.error("The local intelligence service is not running. Start the API and refresh this page.")
+elif st.session_state.get("selected_company_id"):
+    dashboard(st.session_state.selected_company_id)
 else:
-    st.title(f"{ticker} discussions")
-    st.caption("Inspect the public evidence behind the overview classifications.")
-    c1, c2, c3 = st.columns(3)
-    source = c1.selectbox("Source", ["All", "stocktwits", "youtube", "hackernews", "x"])
-    sentiment = c2.selectbox("Sentiment", ["All", "Bullish", "Bearish", "Neutral", "Unclear / Not investment-related"])
-    search = c3.text_input("Search")
-    params = {"ticker": ticker, "days": days}
-    if source != "All": params["source"] = source
-    if sentiment != "All": params["sentiment"] = sentiment
-    if search: params["search"] = search
-    records = api_get("/discussions", params)
-    st.caption(f"{len(records)} matching record(s)")
-    if not records:
-        st.info("No relevant evidence matches these filters.")
-    for item in records:
-        evidence_card(item)
+    company_picker()

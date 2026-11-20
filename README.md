@@ -2,7 +2,7 @@
 
 An interview-ready MVP for investor-relations teams: collect public retail-investor discussion, distinguish the right listed company, classify each post with a structured LLM workflow, compute statistics deterministically, and keep every insight traceable to original evidence.
 
-The primary workflow is **summary first, evidence one click away**. The dashboard shows sample size, coverage gaps, sentiment, themes, concerns, volume, source links, and a company-scoped question box that refuses investment advice and abstains when evidence is thin.
+The primary workflow is **search ticker → select exchange-qualified company → view intelligence**. Summary stays first and evidence is one click away. The dashboard shows sample size, coverage gaps, sentiment, themes, concerns, source links, and a company-scoped question box that refuses investment advice and abstains when evidence is thin.
 
 ## Run the demo
 
@@ -93,10 +93,10 @@ Batch ingestion is separate from serving. One source failure is recorded in `cov
 
 Core tables:
 
-- `posts`: source provenance, exact raw text, cleaned text, UTC timestamps, nullable engagement, hashed author ID, stable composite ID, content hash, relevance state, synthetic flag.
+- `posts`: internal `company_id`, source provenance, exact raw text, cleaned text, UTC timestamps, nullable engagement, hashed author ID, stable composite ID, content hash, relevance state, synthetic flag. Uniqueness is enforced by source ID plus `company_id`, not ticker.
 - `analysis`: strict relevance/sentiment/topic/concern/summary output plus model, prompt version, content hash, status, and evidence IDs.
-- `llm_cache`: cache key over content hash, ticker, model, and prompt version.
-- `coverage`: per-run source status, raw/relevant/rejected counts, time range, restrictions, and errors.
+- `llm_cache`: cache key over content hash, company identity, model, and prompt version.
+- `coverage`: per-company, per-run source status, raw/relevant/rejected counts, time range, restrictions, and errors.
 - `posts_fts`: company-scoped FTS5 retrieval for grounded questions.
 
 See [DESIGN.md](DESIGN.md) for boundaries and production evolution.
@@ -114,18 +114,20 @@ Social text is delimited and treated as untrusted input. Model output is rejecte
 
 The reproducible snapshot contains 20 analyses produced by `gpt-5.6-sol (Codex build-time)` and validated through `PostAnalysis` before database import. The session did not expose actual billable token cost. Using the configured reference rates and approximate text size gives an **equivalent estimate around $0.006**, not an asserted invoice amount.
 
-For free-text questions, FTS5 retrieval is ticker-scoped. The system validates citations, refuses buy/sell advice, and says there is insufficient evidence below the minimum threshold. With no runtime LLM key, the UI explicitly displays an extractive evidence fallback—it never presents that fallback as generated synthesis.
+For free-text questions, FTS5 retrieval is `company_id`-scoped. The system validates citations, refuses buy/sell advice, and says there is insufficient evidence below the minimum threshold. With no runtime LLM key, the UI explicitly displays an extractive evidence fallback—it never presents that fallback as generated synthesis.
 
 ## API
 
 - `GET /health`
 - `GET /companies`
+- `GET /companies/search?q=STB`
+- `GET /companies/{company_id}`
 - `GET /entities/search?ticker=STB`
-- `GET /coverage?ticker=TTWO`
-- `GET /analytics/overview?ticker=TTWO&days=30`
+- `GET /coverage?company_id=take-two-interactive-nasdaq`
+- `GET /analytics/overview?company_id=take-two-interactive-nasdaq&days=30`
 - `GET /analytics/sentiment`, `/topics`, `/trends`
-- `GET /discussions?ticker=TTWO&sentiment=Bullish`
-- `POST /ask` with `{"ticker":"TTWO","question":"What are people saying about GTA VI?"}`
+- `GET /discussions?company_id=take-two-interactive-nasdaq&sentiment=Bullish`
+- `POST /ask` with `{"company_id":"take-two-interactive-nasdaq","question":"What are people saying about GTA VI?"}`
 
 Unknown companies, missing data, source failures, and invalid questions return controlled responses.
 
@@ -138,10 +140,10 @@ python evals/run_evals.py
 
 Current verification:
 
-- 33 unit/integration tests pass, including HN pagination/provenance/relevance boundaries and Finnhub candidate filtering, plus cleaning, dedupe, STB relevance, MCP provenance, source failure isolation, idempotency, enrichment cache, deterministic aggregation, retrieval, citation safety, and API contracts.
+- 35 unit/integration tests pass, including HN pagination/provenance/relevance boundaries, Finnhub candidate filtering, company search and same-ticker database isolation, plus cleaning, dedupe, STB relevance, MCP provenance, source failure isolation, idempotency, enrichment cache, deterministic aggregation, retrieval, citation safety, and API contracts.
 - 30/30 regression cases pass: 20 enrichment labels, 7 relevance cases, and 3 RAG safety/grounding behaviors.
 - Local API smoke test: all main endpoints returned 200 in roughly 0.6–2.6 ms on this laptop.
-- The Streamlit UI was browser-tested end to end, including overview, evidence links, discussions, abstention, and no-key fallback.
+- The Streamlit UI is smoke-tested against the local API, including company search, limited-coverage states, overview, evidence, abstention, and no-key fallback.
 
 The enrichment cases are reviewed regression expectations, not an independently annotated expert benchmark. For production, add blinded labels, inter-annotator agreement, drift slices, and prompt/model promotion gates.
 

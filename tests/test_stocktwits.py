@@ -25,7 +25,7 @@ def test_mcp_export_is_normalised_and_username_not_retained(tmp_path) -> None:
     path.write_text(json.dumps(export_payload()), encoding="utf-8")
     posts = StockTwitsCollector(path).fetch("TTWO", datetime(2026, 11, 1, tzinfo=timezone.utc))
     assert len(posts) == 1
-    assert posts[0].id == "stocktwits:7:TTWO"
+    assert posts[0].id == "stocktwits:7:take-two-interactive-nasdaq"
     assert posts[0].synthetic is False
     assert posts[0].author_hash and "123" not in posts[0].author_hash
     assert "user" not in posts[0].raw_metadata

@@ -2,7 +2,7 @@
 
 ## User and product decision
 
-The user is an IR lead with about ten minutes per week. The homepage therefore answers, in order: how much evidence exists, overall mood, top themes, concerns, recency, and where the claims came from. Detailed posts and filters live on a second page. Coverage failures are product state, not log-only errors.
+The user is an IR lead with about ten minutes per week. The product first asks them to choose an exchange-qualified company, then answers: how much evidence exists, overall mood, top themes, concerns, recency, and where the claims came from. Detailed posts and filters live behind an Evidence tab. Coverage failures are product state, not log-only errors.
 
 The application avoids a single “sentiment score”. Counts and sample sizes make uncertainty visible, while source links let an IR user inspect nuance and rumours.
 
@@ -24,7 +24,7 @@ collectors -> clean/dedupe -> relevance -> persist/FTS
 
 ## Data integrity
 
-The stable ID is `source:source_post_id:ticker`; this supports the rare case where the same source object legitimately maps to more than one company. A separate content hash supports duplicate suppression and change-aware analysis. Raw source text and cleaned text are both retained. Engagement values are nullable because unavailable is not zero.
+The stable ID is `source:source_post_id:company_id`, and the database uniqueness boundary is `(source, source_post_id, company_id)`. This lets companies sharing `STB` remain independent even if a provider reuses a source identifier. A separate company-scoped content hash supports duplicate suppression and change-aware analysis. Raw source text and cleaned text are both retained. Engagement values are nullable because unavailable is not zero.
 
 Upserts make repeated collection idempotent. Every analysis row stores its input content hash, model, prompt version, creation time, and status. A current row is skipped; the response cache avoids repeated calls across runs. Failed analysis is recorded rather than silently dropped.
 
@@ -40,6 +40,8 @@ Ticker matching alone is unsafe. Each company has canonical name, aliases, exclu
 4. Text-source matches require “Secure Trust Bank”, `STB.L`, `LON:STB`, or equivalent verified context; bare `STB`, set-top boxes, historical issuers, mistags and crypto communities do not enter target-company analytics.
 
 This prefers false negatives over contaminating an IR briefing with another company.
+
+The UI therefore never defaults `STB` to London. Search returns every verified active match with company name, exchange, ticker and country. The user must select one, after which every post, coverage row, aggregation and RAG query is scoped by its internal `company_id`. A verified company with no matching posts receives an explicit Limited Coverage state.
 
 ## AI reliability and security
 

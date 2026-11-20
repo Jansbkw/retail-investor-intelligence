@@ -43,8 +43,8 @@ def normalise_and_dedupe(posts: list[Post]) -> tuple[list[Post], int]:
     duplicate_count = 0
     for post in posts:
         cleaned = normalise_post(post)
-        key = (cleaned.source, cleaned.source_post_id, cleaned.ticker)
-        content_key = (cleaned.source, cleaned.ticker, cleaned.content_hash)
+        key = (cleaned.source, cleaned.source_post_id, cleaned.company_id)
+        content_key = (cleaned.source, cleaned.company_id, cleaned.content_hash)
         if key in unique or content_key in seen_content:
             duplicate_count += 1
         else:

@@ -12,6 +12,7 @@ def test_mood_direction_is_computed_from_daily_labels(tmp_path) -> None:
     for source_id, day in [("1", 10), ("2", 14)]:
         item = Post(
             source="stocktwits", source_post_id=source_id, ticker="TTWO",
+            company_id="take-two-interactive-nasdaq",
             company_name="Take-Two Interactive Software, Inc.", raw_text="$TTWO outlook",
             created_at=datetime(2026, 11, day, tzinfo=timezone.utc),
             collected_at=datetime(2026, 11, 20, tzinfo=timezone.utc),
@@ -27,7 +28,7 @@ def test_mood_direction_is_computed_from_daily_labels(tmp_path) -> None:
             "confidence": 0.9, "explanation": "Test label", "summary": "Test summary",
             "evidence_reference_ids": [item.id],
         }, "test", "v1", path=db)
-    result = overview("TTWO", days=30, now=datetime(2026, 11, 20, tzinfo=timezone.utc), db_path=db)
+    result = overview("take-two-interactive-nasdaq", days=30, now=datetime(2026, 11, 20, tzinfo=timezone.utc), db_path=db)
     assert result["mood_direction"] == "improving"
     assert [point["score"] for point in result["sentiment_trend"]] == [-1.0, 1.0]
 
@@ -39,6 +40,7 @@ def test_only_llm_relevant_pending_candidates_enter_analytics(tmp_path) -> None:
     for source_id in ("relevant", "irrelevant", "unanalysed"):
         item = Post(
             source="youtube", source_post_id=source_id, ticker="TTWO",
+            company_id="take-two-interactive-nasdaq",
             company_name="Take-Two Interactive Software, Inc.", raw_text=source_id,
             created_at=datetime(2026, 11, 19, tzinfo=timezone.utc),
             collected_at=datetime(2026, 11, 20, tzinfo=timezone.utc),
@@ -57,7 +59,40 @@ def test_only_llm_relevant_pending_candidates_enter_analytics(tmp_path) -> None:
             "evidence_reference_ids": [item.id],
         }, "test", "v1", path=db)
 
-    result = overview("TTWO", days=30, now=datetime(2026, 11, 20, tzinfo=timezone.utc), db_path=db)
+    result = overview("take-two-interactive-nasdaq", days=30, now=datetime(2026, 11, 20, tzinfo=timezone.utc), db_path=db)
     assert result["sample_size"] == 1
     assert result["analysed_count"] == 1
     assert result["pending_candidate_count"] == 1
+
+
+def test_same_ticker_companies_are_stored_and_aggregated_independently(tmp_path) -> None:
+    db = tmp_path / "test.db"
+    init_db(db)
+    posts = []
+    for company_id, company_name, text in [
+        ("secure-trust-bank-lse", "Secure Trust Bank plc", "Secure Trust lending update"),
+        ("storebrand-ose", "Storebrand ASA", "Storebrand insurance update"),
+    ]:
+        item = Post(
+            source="example", source_post_id="shared-source-id", ticker="STB",
+            company_id=company_id, company_name=company_name, raw_text=text,
+            created_at=datetime(2026, 11, 19, tzinfo=timezone.utc),
+            collected_at=datetime(2026, 11, 20, tzinfo=timezone.utc),
+            source_url=f"https://example.test/{company_id}",
+        )
+        item.relevance_status = RelevanceStatus.RELEVANT
+        posts.append(item)
+
+    assert upsert_posts(posts, db) == 2
+    secure_trust = overview(
+        "secure-trust-bank-lse", days=30,
+        now=datetime(2026, 11, 20, tzinfo=timezone.utc), db_path=db,
+    )
+    storebrand = overview(
+        "storebrand-ose", days=30,
+        now=datetime(2026, 11, 20, tzinfo=timezone.utc), db_path=db,
+    )
+    assert secure_trust["sample_size"] == 1
+    assert secure_trust["evidence"][0]["text"] == "Secure Trust lending update"
+    assert storebrand["sample_size"] == 1
+    assert storebrand["evidence"][0]["text"] == "Storebrand insurance update"

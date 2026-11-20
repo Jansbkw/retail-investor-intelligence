@@ -13,5 +13,5 @@ def test_health() -> None:
 
 
 def test_unknown_company_is_controlled() -> None:
-    response = TestClient(app).get("/analytics/overview", params={"ticker": "NOPE"})
+    response = TestClient(app).get("/analytics/overview", params={"company_id": "NOPE"})
     assert response.status_code == 404

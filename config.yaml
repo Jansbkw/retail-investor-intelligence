@@ -1,7 +1,10 @@
 companies:
   TTWO:
+    company_id: take-two-interactive-nasdaq
     name: Take-Two Interactive Software, Inc.
     exchange: Nasdaq
+    country: United States
+    isin: US8740541094
     aliases: ["Take-Two", "Take Two", "Rockstar Games", "Rockstar", "GTA VI", "GTA 6", "Grand Theft Auto"]
     youtube_queries: ["Take-Two stock", "Take-Two earnings", "TTWO stock", "GTA VI sales", "GTA VI Take-Two investors", "Rockstar Games revenue"]
     hackernews_queries: ["TTWO", "Take-Two Interactive", "Take Two Interactive", "Rockstar Games", "GTA VI", "GTA 6", "Grand Theft Auto"]
@@ -12,8 +15,11 @@ companies:
         expected_title: Take-Two Interactive Software, Inc.
         expected_exchange: NASDAQ
   VEON:
+    company_id: veon-nasdaq
     name: VEON Ltd.
     exchange: Nasdaq
+    country: United States
+    isin: US91822M5022
     aliases: ["VEON", "Beeline", "Kyivstar", "Jazz Pakistan", "Mobilink"]
     youtube_queries: ["VEON stock", "VEON earnings", "VEON investor", "VEON capital markets day", "Kyivstar VEON investors"]
     hackernews_queries: ["VEON", "VEON Ltd", "Kyivstar", "Jazz Pakistan", "Beeline"]
@@ -24,8 +30,11 @@ companies:
         expected_title: VEON Ltd
         expected_exchange: NASDAQ
   STB:
+    company_id: secure-trust-bank-lse
     name: Secure Trust Bank plc
     exchange: London Stock Exchange
+    country: United Kingdom
+    isin: GB00B6TKHP66
     aliases: ["Secure Trust Bank", "Secure Trust", "STB.L", "LON:STB"]
     youtube_queries: ["Secure Trust Bank", "Secure Trust Bank results", "Secure Trust Bank shares", "Secure Trust Bank investors", "Secure Trust Bank annual results"]
     hackernews_queries: ["Secure Trust Bank", "STB.L", "LON:STB"]
@@ -38,42 +47,54 @@ companies:
         expected_exchange: LSE
     security_candidates:
       - entity_id: GB00B6TKHP66
+        company_id: secure-trust-bank-lse
         name: Secure Trust Bank plc
         symbol: STB
         exchange: London Stock Exchange
+        country: United Kingdom
         isin: GB00B6TKHP66
         status: active
         aliases: ["Secure Trust Bank", "Secure Trust", "STB.L", "LON:STB"]
       - entity_id: NO0003053605
+        company_id: storebrand-ose
         name: Storebrand ASA
         symbol: STB
         exchange: Oslo Børs
+        country: Norway
         isin: NO0003053605
         status: active
         aliases: ["Storebrand", "Storebrand ASA", "OSE:STB"]
       - entity_id: TN0002600955
+        company_id: societe-tunisienne-bvmt
         name: Société Tunisienne de Banque
         symbol: STB
         exchange: Bourse de Tunis
+        country: Tunisia
         isin: TN0002600955
         status: active
         aliases: ["Société Tunisienne de Banque", "Societe Tunisienne de Banque", "BVMT:STB"]
       - entity_id: legacy-student-transportation
+        company_id: student-transportation-historical
         name: Student Transportation Inc
         symbol: STB
         exchange: Former Nasdaq / TSX
+        country: Canada
         status: historical
         aliases: ["Student Transportation", "Student Transportation Inc"]
       - entity_id: mistag-stba
+        company_id: st-bancorp-nasdaq
         name: S&T Bancorp, Inc.
         symbol: STBA
         exchange: Nasdaq
+        country: United States
         status: mis_tagged
         aliases: ["S&T Bancorp", "STBA"]
       - entity_id: noncompany-secure-the-bag
+        company_id: secure-the-bag-non-company
         name: Secure The Bag token/community
         symbol: STB
         exchange: Crypto / non-company
+        country: Global
         status: non_company
         aliases: ["Secure The Bag", "first ledger", "Xaman"]
 

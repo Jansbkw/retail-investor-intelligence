@@ -24,6 +24,17 @@ def test_stb_search_returns_all_active_exchange_qualified_candidates(monkeypatch
     }
 
 
+def test_company_picker_uses_unique_company_ids_for_stb() -> None:
+    response = TestClient(app).get("/companies/search", params={"q": "STB"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 3
+    assert {item["company_id"] for item in payload} == {
+        "secure-trust-bank-lse", "storebrand-ose", "societe-tunisienne-bvmt",
+    }
+    assert all(item["ticker"] == "STB" for item in payload)
+
+
 def test_same_ticker_is_resolved_by_company_context() -> None:
     candidates = stb_candidates()
     secure_trust = resolve_ticker_entity(

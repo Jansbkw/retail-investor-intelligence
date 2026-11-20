@@ -49,7 +49,8 @@ def ingest(
         company = config.companies[ticker]
         for source in selected_sources:
             report: dict[str, Any] = {
-                "run_id": run_id, "ticker": ticker, "source": source, "status": "unavailable",
+                "run_id": run_id, "ticker": ticker, "company_id": company.company_id,
+                "source": source, "status": "unavailable",
                 "raw_count": 0, "relevant_count": 0, "rejected_count": 0,
                 "duplicates_removed": 0, "new_records": 0, "earliest_at": None,
                 "latest_at": None, "error": None, "restrictions": None,

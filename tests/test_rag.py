@@ -21,6 +21,7 @@ def prepare(db) -> None:
     ]):
         item = Post(
             source="stocktwits", source_post_id=str(index), ticker="TTWO",
+            company_id="take-two-interactive-nasdaq",
             company_name="Take-Two Interactive Software, Inc.", raw_text=text,
             created_at=NOW, collected_at=NOW,
             source_url=f"https://stocktwits.com/message/{index}",
@@ -31,10 +32,10 @@ def prepare(db) -> None:
     upsert_posts(rows, db)
 
 
-def test_retrieval_is_ticker_scoped(tmp_path) -> None:
+def test_retrieval_is_company_scoped(tmp_path) -> None:
     db = tmp_path / "test.db"
     prepare(db)
-    rows = retrieve("What are people saying about GTA VI?", "TTWO", db_path=db)
+    rows = retrieve("What are people saying about GTA VI?", "take-two-interactive-nasdaq", db_path=db)
     assert len(rows) == 2
     assert {row["ticker"] for row in rows} == {"TTWO"}
 
@@ -42,9 +43,9 @@ def test_retrieval_is_ticker_scoped(tmp_path) -> None:
 def test_ask_refuses_advice_and_abstains_without_model(tmp_path) -> None:
     db = tmp_path / "test.db"
     prepare(db)
-    refused = ask("Should I buy TTWO?", "TTWO", db_path=db)
+    refused = ask("Should I buy TTWO?", "take-two-interactive-nasdaq", db_path=db)
     assert refused.refused_investment_advice is True
-    fallback = ask("What are the GTA VI concerns?", "TTWO", db_path=db)
+    fallback = ask("What are the GTA VI concerns?", "take-two-interactive-nasdaq", db_path=db)
     assert fallback.evidence_count == 2
     assert "unavailable" in fallback.answer
     assert len(fallback.citations) == 2
@@ -61,4 +62,4 @@ def test_generated_answer_without_citations_is_rejected(monkeypatch, tmp_path) -
         llm_enabled=True, openai_model_large="test", openai_model_small="test"
     ))
     with pytest.raises(ValueError, match="unsupported citation"):
-        ask("What are people saying about TTWO?", "TTWO", db_path=db, llm=UncitedLLM())
+        ask("What are people saying about TTWO?", "take-two-interactive-nasdaq", db_path=db, llm=UncitedLLM())

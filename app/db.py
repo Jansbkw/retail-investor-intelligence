@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from app.collectors.base import Post
-from app.config import get_settings
+from app.config import get_settings, load_file_config
 
 
 SCHEMA = """
@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS posts (
     source TEXT NOT NULL,
     source_post_id TEXT NOT NULL,
     ticker TEXT NOT NULL,
+    company_id TEXT NOT NULL DEFAULT '',
     company_name TEXT NOT NULL,
     author_hash TEXT,
     raw_text TEXT NOT NULL,
@@ -36,7 +37,7 @@ CREATE TABLE IF NOT EXISTS posts (
     raw_metadata TEXT NOT NULL,
     content_hash TEXT NOT NULL,
     synthetic INTEGER NOT NULL DEFAULT 0,
-    UNIQUE(source, source_post_id, ticker)
+    UNIQUE(source, source_post_id, company_id)
 );
 CREATE INDEX IF NOT EXISTS idx_posts_ticker_created ON posts(ticker, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_scope ON posts(ticker, relevance_status, source, created_at DESC);
@@ -83,6 +84,7 @@ CREATE TABLE IF NOT EXISTS llm_calls (
 CREATE TABLE IF NOT EXISTS coverage (
     run_id TEXT NOT NULL,
     ticker TEXT NOT NULL,
+    company_id TEXT NOT NULL DEFAULT '',
     source TEXT NOT NULL,
     status TEXT NOT NULL,
     raw_count INTEGER NOT NULL DEFAULT 0,
@@ -94,7 +96,7 @@ CREATE TABLE IF NOT EXISTS coverage (
     restrictions TEXT,
     limitations TEXT,
     collected_at TEXT NOT NULL,
-    PRIMARY KEY(run_id, ticker, source)
+    PRIMARY KEY(run_id, company_id, source)
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(
@@ -122,6 +124,120 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
 def init_db(path: Path | str | None = None) -> None:
     with connect(path) as connection:
         connection.executescript(SCHEMA)
+        _migrate_company_identity(connection)
+        connection.commit()
+        _migrate_identity_constraints(connection)
+
+
+def _column_names(connection: sqlite3.Connection, table: str) -> set[str]:
+    return {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+
+
+def _migrate_company_identity(connection: sqlite3.Connection) -> None:
+    """Add exchange-qualified identity fields without discarding an existing MVP database."""
+    if "company_id" not in _column_names(connection, "posts"):
+        connection.execute("ALTER TABLE posts ADD COLUMN company_id TEXT NOT NULL DEFAULT ''")
+    if "company_id" not in _column_names(connection, "coverage"):
+        connection.execute("ALTER TABLE coverage ADD COLUMN company_id TEXT NOT NULL DEFAULT ''")
+
+    for ticker, company in load_file_config().companies.items():
+        connection.execute(
+            "UPDATE posts SET company_id=? WHERE ticker=? AND company_id=''",
+            (company.company_id, ticker),
+        )
+        connection.execute(
+            "UPDATE coverage SET company_id=? WHERE ticker=? AND company_id=''",
+            (company.company_id, ticker),
+        )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_posts_company_created "
+        "ON posts(company_id, created_at DESC)"
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_posts_company_scope "
+        "ON posts(company_id, relevance_status, source, created_at DESC)"
+    )
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_coverage_company_source "
+        "ON coverage(company_id, source, collected_at DESC)"
+    )
+
+
+def _unique_index_columns(connection: sqlite3.Connection, table: str) -> list[list[str]]:
+    result: list[list[str]] = []
+    for row in connection.execute(f"PRAGMA index_list({table})"):
+        if not row[2]:
+            continue
+        result.append([item[2] for item in connection.execute(f"PRAGMA index_info({row[1]})")])
+    return result
+
+
+def _migrate_identity_constraints(connection: sqlite3.Connection) -> None:
+    """Replace legacy ticker-level uniqueness with company-level uniqueness."""
+    desired = ["source", "source_post_id", "company_id"]
+    if desired not in _unique_index_columns(connection, "posts"):
+        connection.execute("PRAGMA foreign_keys=OFF")
+        connection.execute(
+            """CREATE TABLE posts_v2 (
+                id TEXT PRIMARY KEY, source TEXT NOT NULL, source_post_id TEXT NOT NULL,
+                ticker TEXT NOT NULL, company_id TEXT NOT NULL DEFAULT '', company_name TEXT NOT NULL,
+                author_hash TEXT, raw_text TEXT NOT NULL, text TEXT NOT NULL, created_at TEXT NOT NULL,
+                collected_at TEXT NOT NULL, source_url TEXT NOT NULL, engagement_metrics TEXT NOT NULL,
+                parent_content_id TEXT, relevance_status TEXT NOT NULL, relevance_reason TEXT,
+                language TEXT, raw_metadata TEXT NOT NULL, content_hash TEXT NOT NULL,
+                synthetic INTEGER NOT NULL DEFAULT 0,
+                UNIQUE(source, source_post_id, company_id)
+            )"""
+        )
+        columns = (
+            "id, source, source_post_id, ticker, company_id, company_name, author_hash, raw_text, "
+            "text, created_at, collected_at, source_url, engagement_metrics, parent_content_id, "
+            "relevance_status, relevance_reason, language, raw_metadata, content_hash, synthetic"
+        )
+        connection.execute(f"INSERT INTO posts_v2 ({columns}) SELECT {columns} FROM posts")
+        connection.execute("DROP TABLE posts")
+        connection.execute("ALTER TABLE posts_v2 RENAME TO posts")
+        connection.execute("CREATE INDEX idx_posts_ticker_created ON posts(ticker, created_at DESC)")
+        connection.execute(
+            "CREATE INDEX idx_posts_scope ON posts(ticker, relevance_status, source, created_at DESC)"
+        )
+        connection.execute(
+            "CREATE INDEX idx_posts_company_created ON posts(company_id, created_at DESC)"
+        )
+        connection.execute(
+            "CREATE INDEX idx_posts_company_scope "
+            "ON posts(company_id, relevance_status, source, created_at DESC)"
+        )
+        connection.commit()
+        connection.execute("PRAGMA foreign_keys=ON")
+
+    coverage_pk = [
+        row[1] for row in sorted(
+            (row for row in connection.execute("PRAGMA table_info(coverage)") if row[5]),
+            key=lambda row: row[5],
+        )
+    ]
+    if coverage_pk != ["run_id", "company_id", "source"]:
+        connection.execute(
+            """CREATE TABLE coverage_v2 (
+                run_id TEXT NOT NULL, ticker TEXT NOT NULL, company_id TEXT NOT NULL DEFAULT '',
+                source TEXT NOT NULL, status TEXT NOT NULL, raw_count INTEGER NOT NULL DEFAULT 0,
+                relevant_count INTEGER NOT NULL DEFAULT 0, rejected_count INTEGER NOT NULL DEFAULT 0,
+                earliest_at TEXT, latest_at TEXT, error TEXT, restrictions TEXT, limitations TEXT,
+                collected_at TEXT NOT NULL, PRIMARY KEY(run_id, company_id, source)
+            )"""
+        )
+        columns = (
+            "run_id, ticker, company_id, source, status, raw_count, relevant_count, rejected_count, "
+            "earliest_at, latest_at, error, restrictions, limitations, collected_at"
+        )
+        connection.execute(f"INSERT INTO coverage_v2 ({columns}) SELECT {columns} FROM coverage")
+        connection.execute("DROP TABLE coverage")
+        connection.execute("ALTER TABLE coverage_v2 RENAME TO coverage")
+        connection.execute(
+            "CREATE INDEX idx_coverage_company_source "
+            "ON coverage(company_id, source, collected_at DESC)"
+        )
 
 
 @contextmanager
@@ -151,11 +267,12 @@ def upsert_posts(posts: Sequence[Post], path: Path | str | None = None) -> int:
         connection.executemany(
             """
             INSERT INTO posts (
-                id, source, source_post_id, ticker, company_name, author_hash, raw_text, text,
+                id, source, source_post_id, ticker, company_id, company_name, author_hash, raw_text, text,
                 created_at, collected_at, source_url, engagement_metrics, parent_content_id,
                 relevance_status, relevance_reason, language, raw_metadata, content_hash, synthetic
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(source, source_post_id, ticker) DO UPDATE SET
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(source, source_post_id, company_id) DO UPDATE SET
+                company_id=excluded.company_id,
                 text=excluded.text,
                 raw_text=excluded.raw_text,
                 collected_at=excluded.collected_at,
@@ -166,7 +283,7 @@ def upsert_posts(posts: Sequence[Post], path: Path | str | None = None) -> int:
                 content_hash=excluded.content_hash
             """,
             [(
-                p.id, p.source, p.source_post_id, p.ticker, p.company_name, p.author_hash,
+                p.id, p.source, p.source_post_id, p.ticker, p.company_id, p.company_name, p.author_hash,
                 p.raw_text, p.text, p.created_at.isoformat(), p.collected_at.isoformat(),
                 p.source_url, p.engagement_metrics.model_dump_json(), p.parent_content_id,
                 p.relevance_status.value, p.relevance_reason, p.language,
@@ -184,13 +301,16 @@ def upsert_posts(posts: Sequence[Post], path: Path | str | None = None) -> int:
 
 
 def get_posts(
-    *, ticker: str | None = None, source: str | None = None,
+    *, company_id: str | None = None, ticker: str | None = None, source: str | None = None,
     relevant_only: bool = False, since: datetime | None = None,
     path: Path | str | None = None,
 ) -> list[sqlite3.Row]:
     clauses: list[str] = []
     params: list[Any] = []
-    if ticker:
+    if company_id:
+        clauses.append("company_id=?")
+        params.append(company_id)
+    elif ticker:
         clauses.append("ticker=?")
         params.append(ticker.upper())
     if source:
@@ -210,16 +330,19 @@ def save_coverage(report: dict[str, Any], path: Path | str | None = None) -> Non
     with transaction(path) as connection:
         connection.execute(
             """
-            INSERT INTO coverage VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(run_id, ticker, source) DO UPDATE SET
-              status=excluded.status, raw_count=excluded.raw_count,
+            INSERT INTO coverage (
+                run_id, ticker, company_id, source, status, raw_count, relevant_count,
+                rejected_count, earliest_at, latest_at, error, restrictions, limitations, collected_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(run_id, company_id, source) DO UPDATE SET
+              company_id=excluded.company_id, status=excluded.status, raw_count=excluded.raw_count,
               relevant_count=excluded.relevant_count, rejected_count=excluded.rejected_count,
               earliest_at=excluded.earliest_at, latest_at=excluded.latest_at,
               error=excluded.error, restrictions=excluded.restrictions,
               limitations=excluded.limitations, collected_at=excluded.collected_at
             """,
             (
-                report["run_id"], report["ticker"], report["source"], report["status"],
+                report["run_id"], report["ticker"], report["company_id"], report["source"], report["status"],
                 report.get("raw_count", 0), report.get("relevant_count", 0),
                 report.get("rejected_count", 0), report.get("earliest_at"), report.get("latest_at"),
                 report.get("error"), report.get("restrictions"), report.get("limitations"),
@@ -304,7 +427,10 @@ def list_coverage(path: Path | str | None = None) -> list[sqlite3.Row]:
     with connect(path) as connection:
         return list(connection.execute(
             """SELECT c.* FROM coverage c
-               JOIN (SELECT ticker, source, MAX(collected_at) latest FROM coverage GROUP BY ticker, source) x
-               ON c.ticker=x.ticker AND c.source=x.source AND c.collected_at=x.latest
-               ORDER BY c.ticker, c.source"""
+               JOIN (
+                 SELECT company_id, source, MAX(collected_at) latest
+                 FROM coverage GROUP BY company_id, source
+               ) x
+               ON c.company_id=x.company_id AND c.source=x.source AND c.collected_at=x.latest
+               ORDER BY c.company_id, c.source"""
         ))

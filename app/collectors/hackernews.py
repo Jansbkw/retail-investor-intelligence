@@ -193,6 +193,7 @@ class HackerNewsCollector(Collector):
                             source=self.name,
                             source_post_id=object_id,
                             ticker=ticker,
+                            company_id=company.company_id,
                             company_name=company.name,
                             raw_text=hit_raw_text(hit, kind),
                             author_hash=Post.hash_author(self.name, author),

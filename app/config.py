@@ -22,17 +22,22 @@ class SecurityCandidate(BaseModel):
     """One exchange-qualified entity that may share a ticker symbol."""
 
     entity_id: str
+    company_id: str
     name: str
     symbol: str
     exchange: str
+    country: str
     isin: str | None = None
     status: Literal["active", "historical", "mis_tagged", "non_company"] = "active"
     aliases: list[str] = Field(default_factory=list)
 
 
 class CompanyConfig(BaseModel):
+    company_id: str
     name: str
     exchange: str
+    country: str
+    isin: str | None = None
     aliases: list[str] = Field(default_factory=list)
     youtube_queries: list[str] = Field(default_factory=list)
     hackernews_queries: list[str] = Field(default_factory=list)
@@ -72,6 +77,16 @@ class FileConfig(BaseModel):
     collection: CollectionConfig = Field(default_factory=CollectionConfig)
     ui: UIConfig = Field(default_factory=UIConfig)
     ai: AIConfig = Field(default_factory=AIConfig)
+
+
+class CompanyIdentity(BaseModel):
+    company_id: str
+    name: str
+    ticker: str
+    exchange: str
+    country: str
+    isin: str | None = None
+    analytics_enabled: bool = False
 
 
 class Settings(BaseSettings):
@@ -120,6 +135,38 @@ def load_file_config(path: str | None = None) -> FileConfig:
     with config_path.open(encoding="utf-8") as handle:
         raw: dict[str, Any] = yaml.safe_load(handle)
     return FileConfig.model_validate(raw)
+
+
+def company_registry() -> dict[str, CompanyIdentity]:
+    registry: dict[str, CompanyIdentity] = {}
+    for ticker, company in load_file_config().companies.items():
+        registry[company.company_id] = CompanyIdentity(
+            company_id=company.company_id,
+            name=company.name,
+            ticker=ticker,
+            exchange=company.exchange,
+            country=company.country,
+            isin=company.isin,
+            analytics_enabled=True,
+        )
+        for candidate in company.security_candidates:
+            if candidate.status != "active":
+                continue
+            existing = registry.get(candidate.company_id)
+            registry[candidate.company_id] = CompanyIdentity(
+                company_id=candidate.company_id,
+                name=candidate.name,
+                ticker=candidate.symbol,
+                exchange=candidate.exchange,
+                country=candidate.country,
+                isin=candidate.isin,
+                analytics_enabled=bool(existing and existing.analytics_enabled),
+            )
+    return registry
+
+
+def company_identity(company_id: str) -> CompanyIdentity | None:
+    return company_registry().get(company_id)
 
 
 def reset_config_cache() -> None:

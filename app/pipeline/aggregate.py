@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from app.config import company_identity
 from app.db import connect, list_coverage
 
 
@@ -22,12 +23,15 @@ def _engagement_total(raw: str) -> int | None:
 
 
 def overview(
-    ticker: str, *, days: int = 30, sources: list[str] | None = None,
+    company_id: str, *, days: int = 30, sources: list[str] | None = None,
     now: datetime | None = None, db_path: str | Path | None = None,
 ) -> dict[str, Any]:
+    identity = company_identity(company_id)
+    if identity is None:
+        raise ValueError(f"Unknown company: {company_id}")
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     since = current - timedelta(days=days)
-    params: list[Any] = [ticker.upper(), since.isoformat()]
+    params: list[Any] = [company_id, since.isoformat()]
     source_clause = ""
     if sources:
         source_clause = f" AND p.source IN ({','.join('?' for _ in sources)})"
@@ -37,13 +41,13 @@ def overview(
             f"""SELECT p.*, a.sentiment_label, a.topics_json, a.concerns_json,
                        a.summary, a.confidence, a.status analysis_status
                 FROM posts p LEFT JOIN analysis a ON a.post_id=p.id
-                WHERE p.ticker=? AND p.created_at>=? AND {ELIGIBLE_DISCUSSION_SQL}
+                WHERE p.company_id=? AND p.created_at>=? AND {ELIGIBLE_DISCUSSION_SQL}
                 {source_clause} ORDER BY p.created_at DESC""",
             params,
         ))
         candidate_count = connection.execute(
             f"""SELECT COUNT(*) FROM posts p LEFT JOIN analysis a ON a.post_id=p.id
-                WHERE p.ticker=? AND p.created_at>=? AND p.relevance_status='pending'
+                WHERE p.company_id=? AND p.created_at>=? AND p.relevance_status='pending'
                 AND (a.status IS NULL OR a.status!='success') {source_clause}""",
             params,
         ).fetchone()[0]
@@ -91,15 +95,18 @@ def overview(
             delta = last_score - first_score
             mood_direction = "improving" if delta >= 0.2 else "worsening" if delta <= -0.2 else "stable"
     if not rows:
-        headline = "No relevant discussion was found in the available sources for this period."
+        headline = "Limited coverage — no verified investor discussion was found in the available sources."
     elif not analysed:
         headline = f"{len(rows)} relevant discussions collected; AI analysis has not run yet."
     else:
         headline = f"Discussion is mainly {leading_sentiment.lower()}, led by {leading_topic.lower()}."
     freshness = max((row["created_at"] for row in rows), default=None)
-    coverage = [dict(row) for row in list_coverage(db_path) if row["ticker"] == ticker.upper()]
+    coverage = [dict(row) for row in list_coverage(db_path) if row["company_id"] == company_id]
     return {
-        "ticker": ticker.upper(), "window_days": days, "generated_at": current.isoformat(),
+        "company_id": company_id, "company_name": identity.name, "ticker": identity.ticker,
+        "exchange": identity.exchange, "country": identity.country, "isin": identity.isin,
+        "coverage_status": "available" if rows else "limited",
+        "window_days": days, "generated_at": current.isoformat(),
         "sample_size": len(rows), "analysed_count": analysed,
         "pending_candidate_count": candidate_count,
         "headline": headline,
@@ -117,13 +124,15 @@ def overview(
 
 
 def discussions(
-    ticker: str, *, days: int = 30, source: str | None = None,
+    company_id: str, *, days: int = 30, source: str | None = None,
     sentiment: str | None = None, topic: str | None = None, search: str | None = None,
     now: datetime | None = None, db_path: str | Path | None = None,
 ) -> list[dict[str, Any]]:
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
-    clauses = ["p.ticker=?", "p.created_at>=?", ELIGIBLE_DISCUSSION_SQL]
-    params: list[Any] = [ticker.upper(), (current - timedelta(days=days)).isoformat()]
+    if company_identity(company_id) is None:
+        raise ValueError(f"Unknown company: {company_id}")
+    clauses = ["p.company_id=?", "p.created_at>=?", ELIGIBLE_DISCUSSION_SQL]
+    params: list[Any] = [company_id, (current - timedelta(days=days)).isoformat()]
     if source:
         clauses.append("p.source=?")
         params.append(source)

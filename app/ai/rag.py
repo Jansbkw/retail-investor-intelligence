@@ -8,7 +8,7 @@ from typing import Any
 from app.ai.llm import LLMClient
 from app.ai.prompts import RAG_SYSTEM, RAG_USER
 from app.ai.schemas import Citation, GroundedAnswer
-from app.config import get_settings, load_file_config
+from app.config import company_identity, get_settings, load_file_config
 from app.db import connect
 
 
@@ -26,7 +26,7 @@ def _query_terms(question: str) -> list[str]:
 
 
 def retrieve(
-    question: str, ticker: str, *, limit: int = 8, db_path: str | Path | None = None,
+    question: str, company_id: str, *, limit: int = 8, db_path: str | Path | None = None,
 ) -> list[dict[str, Any]]:
     terms = _query_terms(question)
     with connect(db_path) as connection:
@@ -38,36 +38,37 @@ def retrieve(
                    FROM posts_fts
                    JOIN posts p ON p.id=posts_fts.post_id
                    LEFT JOIN analysis a ON a.post_id=p.id
-                   WHERE posts_fts MATCH ? AND p.ticker=? AND {ELIGIBLE_EVIDENCE_SQL}
+                   WHERE posts_fts MATCH ? AND p.company_id=? AND {ELIGIBLE_EVIDENCE_SQL}
                    ORDER BY rank LIMIT ?""",
-                (query, ticker.upper(), limit),
+                (query, company_id, limit),
             ))
         else:
             rows = list(connection.execute(
                 f"""SELECT p.*, a.summary, a.sentiment_label, a.topics_json, 0 rank
                    FROM posts p LEFT JOIN analysis a ON a.post_id=p.id
-                   WHERE p.ticker=? AND {ELIGIBLE_EVIDENCE_SQL}
+                   WHERE p.company_id=? AND {ELIGIBLE_EVIDENCE_SQL}
                    ORDER BY p.created_at DESC LIMIT ?""",
-                (ticker.upper(), limit),
+                (company_id, limit),
             ))
     return [dict(row) for row in rows]
 
 
 def ask(
-    question: str, ticker: str, *, db_path: str | Path | None = None,
+    question: str, company_id: str, *, db_path: str | Path | None = None,
     llm: LLMClient | None = None,
 ) -> GroundedAnswer:
     if not 3 <= len(question.strip()) <= 500:
         raise ValueError("Question must contain between 3 and 500 characters")
-    if ticker.upper() not in load_file_config().companies:
-        raise ValueError("Unknown ticker")
+    identity = company_identity(company_id)
+    if identity is None:
+        raise ValueError("Unknown company")
     if ADVICE_PATTERN.search(question):
         return GroundedAnswer(
             answer="I can summarise collected investor discussion, but I can’t provide investment advice or a buy/sell recommendation.",
             refused_investment_advice=True,
         )
     config = load_file_config()
-    evidence = retrieve(question, ticker, limit=config.ai.retrieval_k, db_path=db_path)
+    evidence = retrieve(question, company_id, limit=config.ai.retrieval_k, db_path=db_path)
     if len(evidence) < config.ai.minimum_evidence:
         return GroundedAnswer(
             answer="I couldn't find enough relevant discussion in the collected data to answer this reliably.",
@@ -93,7 +94,7 @@ def ask(
     answer = client.structured(
         operation="rag", model=settings.openai_model_large or settings.openai_model_small or "",
         system=RAG_SYSTEM,
-        user=RAG_USER.format(question=question, ticker=ticker.upper(), evidence=context),
+        user=RAG_USER.format(question=question, ticker=identity.ticker, evidence=context),
         schema=GroundedAnswer,
     )
     valid = {row["id"]: row["source_url"] for row in evidence}

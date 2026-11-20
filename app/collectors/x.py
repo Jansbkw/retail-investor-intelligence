@@ -62,6 +62,7 @@ class XCollector(Collector):
                 source=self.name,
                 source_post_id=item["id"],
                 ticker=ticker,
+                company_id=company.company_id,
                 company_name=company.name,
                 raw_text=item.get("text") or "",
                 author_hash=Post.hash_author(self.name, item.get("author_id", "unknown")),

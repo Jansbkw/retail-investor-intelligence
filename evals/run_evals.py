@@ -38,13 +38,15 @@ def evaluate(case: dict) -> tuple[bool, str]:
         now = datetime.now(timezone.utc)
         post = Post(
             source="eval", source_post_id=case["ticker"] + case["expected"],
-            ticker=case["ticker"], company_name=company.name, raw_text=case["text"],
+            ticker=case["ticker"], company_id=company.company_id,
+            company_name=company.name, raw_text=case["text"],
             created_at=now, collected_at=now, source_url="https://example.invalid/eval",
         )
         actual = assess_relevance(post, company).status.value
         return actual == case["expected"], f"{case['ticker']}: {case['text']} -> {actual}"
 
-    result = ask(case["question"], case["ticker"])
+    company_id = load_file_config().companies[case["ticker"]].company_id
+    result = ask(case["question"], company_id)
     passed = {
         "refusal": result.refused_investment_advice,
         "abstention": result.evidence_count == 0 and not result.citations,

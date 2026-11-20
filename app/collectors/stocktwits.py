@@ -78,6 +78,7 @@ class StockTwitsCollector(Collector):
                 source=self.name,
                 source_post_id=str(message["id"]),
                 ticker=ticker,
+                company_id=company.company_id,
                 company_name=company.name,
                 raw_text=message.get("body") or "",
                 author_hash=author_hash,

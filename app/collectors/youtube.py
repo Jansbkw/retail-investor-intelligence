@@ -108,6 +108,7 @@ class YouTubeCollector(Collector):
                         source=self.name,
                         source_post_id=comment_id,
                         ticker=ticker,
+                        company_id=company.company_id,
                         company_name=company.name,
                         raw_text=snippet.get("textDisplay") or "",
                         author_hash=Post.hash_author(self.name, author_id),

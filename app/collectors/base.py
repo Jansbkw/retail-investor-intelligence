@@ -35,6 +35,7 @@ class Post(BaseModel):
     source_post_id: str
     ticker: str
     company_name: str
+    company_id: str = ""
     raw_text: str
     text: str = ""
     author_hash: str | None = None
@@ -64,13 +65,15 @@ class Post(BaseModel):
 
     @model_validator(mode="after")
     def derive_identity(self) -> "Post":
+        if not self.company_id:
+            self.company_id = self.ticker.casefold()
         if not self.text:
             self.text = self.raw_text
         if not self.id:
-            self.id = f"{self.source}:{self.source_post_id}:{self.ticker}"
+            self.id = f"{self.source}:{self.source_post_id}:{self.company_id}"
         if not self.content_hash:
             normalised = " ".join(self.text.casefold().split())
-            material = f"{self.source}\0{self.ticker}\0{normalised}"
+            material = f"{self.source}\0{self.company_id}\0{normalised}"
             self.content_hash = hashlib.sha256(material.encode()).hexdigest()
         return self
 
@@ -101,4 +104,3 @@ class Collector(ABC):
     @abstractmethod
     def fetch(self, ticker: str, since: datetime) -> list[Post]:
         """Fetch public posts or raise a controlled CollectorError."""
-
