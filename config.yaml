@@ -3,6 +3,7 @@ companies:
     name: Take-Two Interactive Software, Inc.
     exchange: Nasdaq
     aliases: ["Take-Two", "Take Two", "Rockstar Games", "Rockstar", "GTA VI", "GTA 6", "Grand Theft Auto"]
+    youtube_queries: ["Take-Two stock", "Take-Two earnings", "TTWO stock", "GTA VI sales", "GTA VI Take-Two investors", "Rockstar Games revenue"]
     exclusions: []
     source_identities:
       stocktwits:
@@ -13,6 +14,7 @@ companies:
     name: VEON Ltd.
     exchange: Nasdaq
     aliases: ["VEON", "Beeline", "Kyivstar", "Jazz Pakistan", "Mobilink"]
+    youtube_queries: ["VEON stock", "VEON earnings", "VEON investor", "VEON capital markets day", "Kyivstar VEON investors"]
     exclusions: []
     source_identities:
       stocktwits:
@@ -23,6 +25,7 @@ companies:
     name: Secure Trust Bank plc
     exchange: London Stock Exchange
     aliases: ["Secure Trust Bank", "Secure Trust", "STB.L", "LON:STB"]
+    youtube_queries: ["Secure Trust Bank", "Secure Trust Bank results", "Secure Trust Bank shares", "Secure Trust Bank investors", "Secure Trust Bank annual results"]
     exclusions: ["Student Transportation", "Société Tunisienne de Banque", "Societe Tunisienne de Banque", "set-top box", "set top box"]
     ambiguous: true
     source_identities:

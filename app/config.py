@@ -22,6 +22,7 @@ class CompanyConfig(BaseModel):
     name: str
     exchange: str
     aliases: list[str] = Field(default_factory=list)
+    youtube_queries: list[str] = Field(default_factory=list)
     exclusions: list[str] = Field(default_factory=list)
     ambiguous: bool = False
     source_identities: dict[str, SourceIdentity] = Field(default_factory=dict)
