@@ -4,9 +4,9 @@ import logging
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TypeVar
+from typing import Any, TypeVar
 
-from openai import APIConnectionError, APIError, APITimeoutError, OpenAI, RateLimitError
+from openai import APIConnectionError, APITimeoutError, InternalServerError, OpenAI, RateLimitError
 from pydantic import BaseModel
 from tenacity import Retrying, retry_if_exception_type, stop_after_attempt, wait_exponential_jitter
 
@@ -16,6 +16,27 @@ from app.db import transaction
 
 LOGGER = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
+
+
+def strict_json_schema(model: type[BaseModel]) -> dict[str, Any]:
+    """Adapt Pydantic JSON Schema to OpenAI's strict structured-output subset."""
+    schema = model.model_json_schema()
+
+    def visit(node: Any) -> None:
+        if isinstance(node, dict):
+            node.pop("default", None)
+            properties = node.get("properties")
+            if isinstance(properties, dict):
+                node["additionalProperties"] = False
+                node["required"] = list(properties)
+            for value in node.values():
+                visit(value)
+        elif isinstance(node, list):
+            for value in node:
+                visit(value)
+
+    visit(schema)
+    return schema
 
 
 class LLMClient:
@@ -35,7 +56,9 @@ class LLMClient:
         if not self.client:
             raise RuntimeError("OPENAI_API_KEY and OPENAI_MODEL_SMALL must be configured")
         retrying = Retrying(
-            retry=retry_if_exception_type((APITimeoutError, APIConnectionError, RateLimitError, APIError)),
+            retry=retry_if_exception_type(
+                (APITimeoutError, APIConnectionError, RateLimitError, InternalServerError)
+            ),
             wait=wait_exponential_jitter(initial=1, max=8),
             stop=stop_after_attempt(self.ai_config.max_retries),
             reraise=True,
@@ -48,7 +71,10 @@ class LLMClient:
                     messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
                     response_format={
                         "type": "json_schema",
-                        "json_schema": {"name": schema.__name__, "strict": True, "schema": schema.model_json_schema()},
+                        "json_schema": {
+                            "name": schema.__name__, "strict": True,
+                            "schema": strict_json_schema(schema),
+                        },
                     },
                     temperature=0,
                 )

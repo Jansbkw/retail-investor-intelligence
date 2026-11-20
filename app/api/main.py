@@ -7,6 +7,7 @@ from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAIError
 from pydantic import BaseModel, Field
 
 from app.ai.rag import ask
@@ -231,5 +232,10 @@ def get_discussions(
 def ask_question(request: AskRequest) -> dict[str, object]:
     try:
         return ask(request.question, _company(request.company_id).company_id).model_dump()
+    except OpenAIError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is temporarily unavailable; no unsupported answer was generated.",
+        ) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

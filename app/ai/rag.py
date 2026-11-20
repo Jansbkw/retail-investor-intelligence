@@ -152,4 +152,6 @@ def ask(
     if not answer.citations or any(c.post_id not in valid or c.url != valid[c.post_id] for c in answer.citations):
         raise ValueError("Model returned an unsupported citation")
     answer.evidence_count = len(evidence)
+    # Advice requests return before the model call, so a grounded research answer is never a refusal.
+    answer.refused_investment_advice = False
     return answer

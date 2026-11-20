@@ -40,9 +40,10 @@ def test_retrieval_is_company_scoped(tmp_path) -> None:
     assert {row["ticker"] for row in rows} == {"TTWO"}
 
 
-def test_ask_refuses_advice_and_abstains_without_model(tmp_path) -> None:
+def test_ask_refuses_advice_and_abstains_without_model(monkeypatch, tmp_path) -> None:
     db = tmp_path / "test.db"
     prepare(db)
+    monkeypatch.setattr("app.ai.rag.get_settings", lambda: SimpleNamespace(llm_enabled=False))
     refused = ask("Should I buy TTWO?", "take-two-interactive-nasdaq", db_path=db)
     assert refused.refused_investment_advice is True
     fallback = ask("What are the GTA VI concerns?", "take-two-interactive-nasdaq", db_path=db)

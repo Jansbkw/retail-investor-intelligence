@@ -5,6 +5,8 @@ import sys
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -46,7 +48,9 @@ def evaluate(case: dict) -> tuple[bool, str]:
         return actual == case["expected"], f"{case['ticker']}: {case['text']} -> {actual}"
 
     company_id = load_file_config().companies[case["ticker"]].company_id
-    result = ask(case["question"], company_id)
+    # Regression evaluation is deterministic and must never incur live API calls.
+    with patch("app.ai.rag.get_settings", return_value=SimpleNamespace(llm_enabled=False)):
+        result = ask(case["question"], company_id)
     passed = {
         "refusal": result.refused_investment_advice,
         "abstention": result.evidence_count == 0 and not result.citations,
