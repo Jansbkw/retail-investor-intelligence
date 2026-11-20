@@ -159,6 +159,44 @@ def coverage_summary(items: list[dict]) -> None:
     st.caption("    ".join(labels))
 
 
+def ask_panel(company: dict) -> None:
+    company_id = company["company_id"]
+    st.subheader("Ask the evidence")
+    st.caption(
+        "Ask about the collected public discussion. Answers use only this company’s evidence, "
+        "cite source posts, and say when there is not enough data."
+    )
+    question = st.text_input(
+        "Question",
+        placeholder=f"What are investors most concerned about for {company['ticker']}?",
+        label_visibility="collapsed",
+        key=f"ask_question_{company_id}",
+    )
+    if st.button("Ask question", type="primary", key=f"ask_button_{company_id}"):
+        if len(question.strip()) < 3:
+            st.warning("Enter a question of at least 3 characters, then ask again.")
+            return
+        with st.spinner("Reviewing the evidence…"):
+            try:
+                response = httpx.post(
+                    f"{API}/ask",
+                    json={"company_id": company_id, "question": question.strip()},
+                    timeout=45,
+                )
+                response.raise_for_status()
+                answer = response.json()
+                st.markdown("#### Answer")
+                st.write(answer["answer"])
+                for finding in answer.get("supporting_findings", []):
+                    st.markdown(f"- {finding}")
+                for citation in answer.get("citations", []):
+                    st.markdown(f"[{citation['post_id']}]({citation['url']})")
+                if answer.get("limitations"):
+                    st.caption(answer["limitations"])
+            except Exception:
+                st.error("The question could not be answered. No unsupported answer was generated.")
+
+
 def limited_coverage(company: dict, overview: dict) -> None:
     st.markdown(
         """<div class="coverage-box"><div class="eyebrow">Limited coverage</div>
@@ -182,6 +220,8 @@ def limited_coverage(company: dict, overview: dict) -> None:
     st.markdown("#### Source coverage")
     coverage_summary(overview["coverage"])
     st.caption("Coverage gaps are shown explicitly; the product never fills them with synthetic posts.")
+    st.divider()
+    ask_panel(company)
 
 
 def dashboard(company_id: str) -> None:
@@ -255,29 +295,7 @@ def dashboard(company_id: str) -> None:
         else:
             st.caption("No topic analysis is available yet.")
 
-        st.subheader("Ask the evidence")
-        st.caption("Answers use only the selected company’s retrieved posts and include citations.")
-        question = st.text_input(
-            "Question", placeholder=f"What are investors most concerned about for {company['ticker']}?",
-            label_visibility="collapsed",
-        )
-        if st.button("Ask question", type="primary", disabled=not question):
-            with st.spinner("Reviewing the evidence…"):
-                try:
-                    response = httpx.post(
-                        f"{API}/ask", json={"company_id": company_id, "question": question}, timeout=45,
-                    )
-                    response.raise_for_status()
-                    answer = response.json()
-                    st.write(answer["answer"])
-                    for finding in answer.get("supporting_findings", []):
-                        st.markdown(f"- {finding}")
-                    for citation in answer.get("citations", []):
-                        st.markdown(f"[{citation['post_id']}]({citation['url']})")
-                    if answer.get("limitations"):
-                        st.caption(answer["limitations"])
-                except Exception:
-                    st.error("The question could not be answered. No unsupported answer was generated.")
+        ask_panel(company)
         st.caption(overview["caveat"])
 
     with evidence_tab:
