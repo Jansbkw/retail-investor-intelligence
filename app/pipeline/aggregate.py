@@ -9,6 +9,12 @@ from typing import Any
 from app.db import connect, list_coverage
 
 
+ELIGIBLE_DISCUSSION_SQL = """(
+    (p.relevance_status='relevant' AND (a.status IS NULL OR a.status!='success' OR a.relevant=1))
+    OR (p.relevance_status='pending' AND a.status='success' AND a.relevant=1)
+)"""
+
+
 def _engagement_total(raw: str) -> int | None:
     metrics = json.loads(raw)
     values = [value for value in metrics.values() if value is not None]
@@ -31,10 +37,16 @@ def overview(
             f"""SELECT p.*, a.sentiment_label, a.topics_json, a.concerns_json,
                        a.summary, a.confidence, a.status analysis_status
                 FROM posts p LEFT JOIN analysis a ON a.post_id=p.id
-                WHERE p.ticker=? AND p.created_at>=? AND p.relevance_status='relevant'
+                WHERE p.ticker=? AND p.created_at>=? AND {ELIGIBLE_DISCUSSION_SQL}
                 {source_clause} ORDER BY p.created_at DESC""",
             params,
         ))
+        candidate_count = connection.execute(
+            f"""SELECT COUNT(*) FROM posts p LEFT JOIN analysis a ON a.post_id=p.id
+                WHERE p.ticker=? AND p.created_at>=? AND p.relevance_status='pending'
+                AND (a.status IS NULL OR a.status!='success') {source_clause}""",
+            params,
+        ).fetchone()[0]
     sentiment = Counter()
     topics = Counter()
     concerns = Counter()
@@ -89,6 +101,7 @@ def overview(
     return {
         "ticker": ticker.upper(), "window_days": days, "generated_at": current.isoformat(),
         "sample_size": len(rows), "analysed_count": analysed,
+        "pending_candidate_count": candidate_count,
         "headline": headline,
         "sentiment": dict(sentiment),
         "sentiment_trend": sentiment_trend, "mood_direction": mood_direction,
@@ -109,7 +122,7 @@ def discussions(
     now: datetime | None = None, db_path: str | Path | None = None,
 ) -> list[dict[str, Any]]:
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
-    clauses = ["p.ticker=?", "p.created_at>=?", "p.relevance_status='relevant'"]
+    clauses = ["p.ticker=?", "p.created_at>=?", ELIGIBLE_DISCUSSION_SQL]
     params: list[Any] = [ticker.upper(), (current - timedelta(days=days)).isoformat()]
     if source:
         clauses.append("p.source=?")

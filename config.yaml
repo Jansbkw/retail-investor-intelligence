@@ -45,7 +45,7 @@ ui:
   day_options: [7, 30, 90]
 
 ai:
-  prompt_version: enrichment-v2
+  prompt_version: enrichment-v3
   batch_size: 10
   max_retries: 3
   request_timeout_seconds: 30

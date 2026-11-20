@@ -14,6 +14,10 @@ from app.db import connect
 
 STOPWORDS = {"what", "are", "is", "the", "a", "an", "about", "why", "how", "most", "for", "of", "to", "in", "and", "investors", "people"}
 ADVICE_PATTERN = re.compile(r"\b(should i|buy|sell|price target|worth investing|recommend)\b", re.I)
+ELIGIBLE_EVIDENCE_SQL = """(
+    (p.relevance_status='relevant' AND (a.status IS NULL OR a.status!='success' OR a.relevant=1))
+    OR (p.relevance_status='pending' AND a.status='success' AND a.relevant=1)
+)"""
 
 
 def _query_terms(question: str) -> list[str]:
@@ -29,20 +33,20 @@ def retrieve(
         if terms:
             query = " OR ".join(f'"{term}"' for term in terms)
             rows = list(connection.execute(
-                """SELECT p.*, a.summary, a.sentiment_label, a.topics_json,
+                f"""SELECT p.*, a.summary, a.sentiment_label, a.topics_json,
                           bm25(posts_fts) rank
                    FROM posts_fts
                    JOIN posts p ON p.id=posts_fts.post_id
                    LEFT JOIN analysis a ON a.post_id=p.id
-                   WHERE posts_fts MATCH ? AND p.ticker=? AND p.relevance_status='relevant'
+                   WHERE posts_fts MATCH ? AND p.ticker=? AND {ELIGIBLE_EVIDENCE_SQL}
                    ORDER BY rank LIMIT ?""",
                 (query, ticker.upper(), limit),
             ))
         else:
             rows = list(connection.execute(
-                """SELECT p.*, a.summary, a.sentiment_label, a.topics_json, 0 rank
+                f"""SELECT p.*, a.summary, a.sentiment_label, a.topics_json, 0 rank
                    FROM posts p LEFT JOIN analysis a ON a.post_id=p.id
-                   WHERE p.ticker=? AND p.relevance_status='relevant'
+                   WHERE p.ticker=? AND {ELIGIBLE_EVIDENCE_SQL}
                    ORDER BY p.created_at DESC LIMIT ?""",
                 (ticker.upper(), limit),
             ))

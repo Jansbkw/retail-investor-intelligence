@@ -37,7 +37,10 @@ def enrich_posts(
     client = llm or LLMClient(db_path=db_path)
     rows = []
     for ticker in tickers or list(config.companies):
-        rows.extend(get_posts(ticker=ticker, relevant_only=True, path=db_path))
+        rows.extend(
+            row for row in get_posts(ticker=ticker, path=db_path)
+            if row["relevance_status"] in {"relevant", "pending"}
+        )
     report: dict[str, Any] = {
         "candidates": len(rows), "enriched": 0, "cached": 0,
         "skipped_current": 0, "failures": 0, "errors": [],
@@ -56,9 +59,17 @@ def enrich_posts(
                 report["cached"] += 1
             else:
                 company = config.companies[row["ticker"]]
+                metadata = json.loads(row["raw_metadata"] or "{}")
+                source_context = ""
+                if row["source"] == "youtube":
+                    source_context = (
+                        f"Parent video title: {metadata.get('video_title', '')}\n"
+                        f"Parent video description: {metadata.get('video_description', '')[:1200]}"
+                    )
                 user = ENRICHMENT_USER.format(
                     company_name=company.name, ticker=row["ticker"], exchange=company.exchange,
-                    post_id=post_id, source=row["source"], post_text=row["text"][:4000],
+                    post_id=post_id, source=row["source"], source_context=source_context,
+                    post_text=row["text"][:4000],
                 )
                 analysis = client.structured(
                     operation="enrichment", model=selected_model,
@@ -109,4 +120,3 @@ def import_enrichment(path: str | Path, db_path: str | Path | None = None) -> di
             failures += 1
             LOGGER.exception("enrichment_import_failed")
     return {"imported": imported, "failures": failures}
-

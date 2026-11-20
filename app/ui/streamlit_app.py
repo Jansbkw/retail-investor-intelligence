@@ -88,6 +88,8 @@ if page == "Overview":
 
     a, b, c, d = st.columns(4)
     a.metric("Relevant discussions", overview["sample_size"], help=f"Public posts retained after relevance filtering; {overview['analysed_count']} AI-analysed.")
+    if overview.get("pending_candidate_count"):
+        a.caption(f"{overview['pending_candidate_count']} additional comments await AI relevance review.")
     leading = max(overview["sentiment"], key=overview["sentiment"].get) if overview["sentiment"] else "Not analysed"
     b.metric("Leading sentiment", leading)
     b.caption(f"Direction: {overview['mood_direction']}")

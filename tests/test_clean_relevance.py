@@ -52,3 +52,28 @@ def test_ambiguous_ticker_accepts_verified_source_context() -> None:
     post = make_post("The lending growth and valuation look strong", ticker="STB")
     result = apply_relevance(post, company)
     assert result.relevance_status == RelevanceStatus.RELEVANT
+
+
+def test_verified_youtube_comment_becomes_llm_candidate_without_ticker() -> None:
+    company = load_file_config().companies["TTWO"]
+    post = Post(
+        source="youtube", source_post_id="yt-1", ticker="TTWO",
+        company_name=company.name,
+        raw_text="Она окупилась, но бюджет разработки был очень высоким",
+        created_at=NOW, source_url="https://youtube.test/watch?v=1",
+        raw_metadata={"symbols": ["TTWO"], "identity_validated": True},
+    )
+    result = apply_relevance(post, company)
+    assert result.relevance_status == RelevanceStatus.PENDING
+
+
+def test_verified_youtube_emoji_only_comment_is_rejected() -> None:
+    company = load_file_config().companies["TTWO"]
+    post = Post(
+        source="youtube", source_post_id="yt-2", ticker="TTWO",
+        company_name=company.name, raw_text="😱😱😱😱",
+        created_at=NOW, source_url="https://youtube.test/watch?v=1",
+        raw_metadata={"symbols": ["TTWO"], "identity_validated": True},
+    )
+    result = apply_relevance(post, company)
+    assert result.relevance_status == RelevanceStatus.REJECTED

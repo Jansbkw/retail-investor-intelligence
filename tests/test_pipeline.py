@@ -77,3 +77,18 @@ def test_enrichment_is_schema_validated_and_cached(monkeypatch, tmp_path) -> Non
     with connect(db) as connection:
         saved = connection.execute("SELECT sentiment_label, status FROM analysis").fetchone()
     assert tuple(saved) == ("Bullish", "success")
+
+
+def test_enrichment_includes_pending_llm_candidates(monkeypatch, tmp_path) -> None:
+    db = tmp_path / "test.db"
+    init_db(db)
+    row = post("candidate", "Commercial performance may not recover the development budget")
+    row.relevance_status = RelevanceStatus.PENDING
+    upsert_posts([row], db)
+    monkeypatch.setattr("app.pipeline.enrich.get_settings",
+                        lambda: SimpleNamespace(openai_model_small="test-model"))
+
+    result = enrich_posts(tickers=["TTWO"], llm=FakeLLM(), db_path=db)
+
+    assert result["candidates"] == 1
+    assert result["enriched"] == 1

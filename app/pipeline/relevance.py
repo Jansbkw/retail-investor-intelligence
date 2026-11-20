@@ -37,7 +37,7 @@ def assess_relevance(post: Post, company: CompanyConfig) -> RelevanceDecision:
     source_validated = bool(post.raw_metadata.get("identity_validated")) and post.ticker in source_symbols
 
     substantive = re.sub(ticker_pattern, "", post.text, flags=re.IGNORECASE).strip(" $.,!?:;-_")
-    if len(substantive) < 3:
+    if len(substantive) < 3 or sum(character.isalnum() for character in substantive) < 3:
         return RelevanceDecision(RelevanceStatus.REJECTED, "ticker-only or empty discussion")
     if company.ambiguous and not alias_hits and not source_validated:
         return RelevanceDecision(
@@ -48,6 +48,11 @@ def assess_relevance(post: Post, company: CompanyConfig) -> RelevanceDecision:
         return RelevanceDecision(RelevanceStatus.RELEVANT, f"matched company alias: {alias_hits[0]}")
     if source_validated and (ticker_hit or financial_hit):
         return RelevanceDecision(RelevanceStatus.RELEVANT, "validated source symbol plus company/financial context")
+    if source_validated and post.source == "youtube":
+        return RelevanceDecision(
+            RelevanceStatus.PENDING,
+            "verified company video context; requires LLM investor-relevance classification",
+        )
     if ticker_hit and financial_hit:
         return RelevanceDecision(RelevanceStatus.RELEVANT, "ticker plus financial context")
     return RelevanceDecision(RelevanceStatus.REJECTED, "insufficient company-specific investor context")

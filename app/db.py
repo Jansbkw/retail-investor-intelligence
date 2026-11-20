@@ -175,7 +175,7 @@ def upsert_posts(posts: Sequence[Post], path: Path | str | None = None) -> int:
         )
         for post in posts:
             connection.execute("DELETE FROM posts_fts WHERE post_id=?", (post.id,))
-            if post.relevance_status.value == "relevant":
+            if post.relevance_status.value in {"relevant", "pending"}:
                 connection.execute(
                     "INSERT INTO posts_fts(post_id, ticker, text) VALUES (?, ?, ?)",
                     (post.id, post.ticker, post.text),
